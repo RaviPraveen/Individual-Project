@@ -35,6 +35,7 @@ class CustomerDisplayController extends Controller
             'subtotal' => ['required', 'numeric'],
             'discount' => ['required', 'numeric'],
             'tax' => ['required', 'numeric'],
+            'bag_fee' => ['nullable', 'numeric'],
             'total' => ['required', 'numeric'],
             'customer_name' => ['nullable', 'string'],
             'points_balance' => ['nullable', 'integer'],
