@@ -94,6 +94,7 @@
                     <div class="row-line"><span>{{ __('Subtotal') }}</span><span id="cd-subtotal">0.00</span></div>
                     <div class="row-line" id="cd-discount-row"><span>{{ __('Discount') }}</span><span id="cd-discount">0.00</span></div>
                     <div class="row-line" id="cd-tax-row"><span>{{ __('Tax') }}</span><span id="cd-tax">0.00</span></div>
+                    <div class="row-line" id="cd-bag-fee-row"><span>{{ __('Bag Fee') }}</span><span id="cd-bag-fee">0.00</span></div>
                     <div class="row-total"><span>{{ __('Total') }}</span><span id="cd-total">0.00</span></div>
                 </div>
             </div>
