@@ -167,9 +167,11 @@
                 document.getElementById('cd-subtotal').textContent = Number(state.subtotal).toFixed(2);
                 document.getElementById('cd-discount').textContent = Number(state.discount).toFixed(2);
                 document.getElementById('cd-tax').textContent = Number(state.tax).toFixed(2);
+                document.getElementById('cd-bag-fee').textContent = Number(state.bag_fee || 0).toFixed(2);
                 document.getElementById('cd-total').textContent = Number(state.total).toFixed(2);
                 document.getElementById('cd-discount-row').classList.toggle('d-none-cd', !(state.discount > 0));
                 document.getElementById('cd-tax-row').classList.toggle('d-none-cd', !(state.tax > 0));
+                document.getElementById('cd-bag-fee-row').classList.toggle('d-none-cd', !(state.bag_fee > 0));
             }
 
             function renderCompleted(state) {
