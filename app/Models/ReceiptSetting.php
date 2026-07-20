@@ -31,6 +31,26 @@ class ReceiptSetting extends Model
     ];
 
     /**
+     * Mirrors the migration's column defaults. Without these, a fresh
+     * firstOrCreate([]) row would apply the DB defaults on save but the
+     * in-memory model returned to the caller would still read those
+     * attributes as null until re-fetched.
+     */
+    protected $attributes = [
+        'shop_name' => 'Welcome Foodcity',
+        'thank_you_message' => 'Thank you for shopping with us!',
+        'paper_size' => 'thermal',
+        'receipt_width' => '80mm',
+        'header_alignment' => 'center',
+        'footer_alignment' => 'center',
+        'receipt_margin' => 8,
+        'receipt_padding' => 12,
+        'font_family' => 'sans-serif',
+        'font_size' => 12,
+        'font_weight' => 'normal',
+    ];
+
+    /**
      * There is only ever one row. Get it, creating the default row the
      * first time anything asks for it.
      */
