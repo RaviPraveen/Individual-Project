@@ -411,6 +411,7 @@
                         subtotal: summary.subtotal,
                         discount: summary.discount,
                         tax: summary.tax,
+                        bag_fee: summary.bagFee,
                         total: summary.total,
                         customer_name: selectedCustomer ? selectedCustomer.name : null,
                         points_balance: selectedCustomer ? selectedCustomer.points_balance : null,
@@ -422,6 +423,9 @@
 
         discountInput.addEventListener('input', recalculateSummary);
         pointsToRedeemInput.addEventListener('input', recalculateSummary);
+        if (wantsBagInput) {
+            wantsBagInput.addEventListener('change', recalculateSummary);
+        }
 
         document.getElementById('redeem-max-btn').addEventListener('click', () => {
             pointsToRedeemInput.value = pointsToRedeemInput.max || 0;
