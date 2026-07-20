@@ -152,6 +152,7 @@
         const taxPercent = {{ $taxPercent }};
         const pointsRedeemValue = {{ $pointsRedeemValue }};
         const pointsEarnPercent = {{ $pointsEarnPercent }};
+        const bagFee = {{ $bagFee }};
         const productSearchUrl = '{{ route('products.search') }}';
         const customerSearchUrl = '{{ route('customers.search') }}';
         const quickCreateCustomerUrl = '{{ route('cashier.customers.quick-create') }}';
@@ -170,6 +171,7 @@
         const cartBody = document.getElementById('cart-body');
         const itemsInputs = document.getElementById('items-inputs');
         const discountInput = document.getElementById('discount_percent');
+        const wantsBagInput = document.getElementById('wants_bag_input');
 
         function fetchJson(url, options) {
             return fetch(url, Object.assign({ headers: { 'Accept': 'application/json' } }, options)).then(r => r.json().then(data => ({ ok: r.ok, data })));
@@ -352,16 +354,25 @@
             const redemptionValue = pointsToRedeem * pointsRedeemValue;
             const total = totalBeforePoints - redemptionValue;
 
+            // Bag fee is added after points are calculated — it's a flat
+            // service fee, not part of the merchandise total points are
+            // earned on. Mirrors BillingController::store()'s ordering.
+            const wantsBag = wantsBagInput && wantsBagInput.checked;
+            const bagFeeAmount = wantsBag ? bagFee : 0;
+            const finalTotal = total + bagFeeAmount;
+
             pointsRow.classList.toggle('d-none', pointsToRedeem <= 0);
             document.getElementById('summary-points-redeemed').textContent = redemptionValue.toFixed(2);
 
             document.getElementById('summary-subtotal').textContent = subtotal.toFixed(2);
             document.getElementById('summary-discount').textContent = discountAmount.toFixed(2);
             document.getElementById('summary-tax').textContent = taxAmount.toFixed(2);
-            document.getElementById('summary-total').textContent = total.toFixed(2);
+            document.getElementById('summary-bag-fee-row').classList.toggle('d-none', !wantsBag);
+            document.getElementById('summary-bag-fee').textContent = bagFeeAmount.toFixed(2);
+            document.getElementById('summary-total').textContent = finalTotal.toFixed(2);
 
+            const pointsEarnPreview = Math.floor(total * pointsEarnPercent / 100);
             if (selectedCustomer) {
-                const pointsEarnPreview = Math.floor(total * pointsEarnPercent / 100);
                 document.getElementById('summary-points-earn').textContent = pointsEarnPreview;
                 earnRow.classList.remove('d-none');
             } else {
@@ -369,8 +380,8 @@
             }
 
             syncCustomerDisplay({
-                subtotal, discount: discountAmount, tax: taxAmount, total,
-                points_preview: selectedCustomer ? Math.floor(total * pointsEarnPercent / 100) : null,
+                subtotal, discount: discountAmount, tax: taxAmount, total: finalTotal, bagFee: bagFeeAmount,
+                points_preview: selectedCustomer ? pointsEarnPreview : null,
             });
         }
 
