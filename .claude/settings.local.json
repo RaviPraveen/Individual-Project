@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(composer create-project *)",
+      "Bash(ls -la \"/c/Users/Praveen/AppData/Local/Temp/claude/C--xampp-htdocs-Individual-Projct/2a68b4ce-6bbd-4953-bb4e-9a61e543d2eb/tasks/\")",
+      "Bash(ls -la \"/c/Users/Praveen/AppData/Local/Temp/claude/C--xampp-htdocs-Individual-Projct/2a68b4ce-6bbd-4953-bb4e-9a61e543d2eb/scratchpad/laravel_new\" 2>&1 | head -50)",
+      "Bash(powershell -Command \"Get-Process composer,php -ErrorAction SilentlyContinue | Select-Object Id,ProcessName,StartTime\")",
+      "Bash([ -f \"$TARGET\" ])",
+      "Bash(break)",
+      "Bash(powershell -Command \"Get-Process -Id 20436 -ErrorAction SilentlyContinue\")",
+      "Bash(powershell -Command \"Get-Process -Name mysqld -ErrorAction SilentlyContinue | Select-Object Id,ProcessName\")",
+      "Bash(\"/c/xampp/mysql/bin/mysql.exe\" -u root -e \"CREATE DATABASE IF NOT EXISTS welcome_foodcity CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; SHOW DATABASES;\")",
+      "Bash(php artisan *)",
+      "Bash(2>&1)",
+      "Bash(rm -f tailwind.config.js postcss.config.js vite.config.js resources/css/app.css resources/js/app.js)",
+      "Bash(rmdir resources/css resources/js)",
+      "Bash(rm -f resources/views/dashboard.blade.php)",
+      "Bash(mkdir -p resources/views/admin resources/views/cashier)",
+      "Bash(netstat -ano)",
+      "Bash(powershell -Command \"Get-Process -Name httpd -ErrorAction SilentlyContinue | Select-Object Id,ProcessName\")",
+      "Bash(composer require *)",
+      "Bash(xargs -I{} basename {})"
+    ]
+  }
+}
