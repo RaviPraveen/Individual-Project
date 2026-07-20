@@ -13,6 +13,20 @@ class BillingSetting extends Model
         'bag_fee',
     ];
 
+    /**
+     * Mirrors the migration's column defaults. Without these, a fresh
+     * firstOrCreate([]) row would apply the DB defaults on save but the
+     * in-memory model returned to the caller would still read those
+     * attributes as null until re-fetched — silently breaking earnPercent()
+     * the very first time the app ever needs this row.
+     */
+    protected $attributes = [
+        'points_earn_amount' => 100,
+        'points_earn_count' => 1,
+        'points_redeem_value' => 1,
+        'bag_fee' => 0,
+    ];
+
     protected function casts(): array
     {
         return [
