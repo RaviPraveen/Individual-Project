@@ -22,12 +22,17 @@ class ReturnController extends Controller
     {
         $isAdmin = $request->user()->role === 'admin';
 
-        $returns = SaleReturn::with('sale', 'processedBy')
-            ->when(! $isAdmin, fn ($q) => $q->where('processed_by', $request->user()->id))
-            ->latest()
-            ->paginate(15);
+        $scoped = SaleReturn::query()->when(! $isAdmin, fn ($q) => $q->where('processed_by', $request->user()->id));
 
-        return view($isAdmin ? 'admin.returns.index' : 'cashier.returns.index', compact('returns'));
+        $returns = (clone $scoped)->with('sale', 'processedBy')->latest()->paginate(15);
+
+        $stats = [
+            'total_count' => (clone $scoped)->count(),
+            'month_refunded' => (clone $scoped)->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->sum('total_refunded'),
+            'month_count' => (clone $scoped)->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
+        ];
+
+        return view($isAdmin ? 'admin.returns.index' : 'cashier.returns.index', compact('returns', 'stats'));
     }
 
     public function lookup(Request $request): JsonResponse

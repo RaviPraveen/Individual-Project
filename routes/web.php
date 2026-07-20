@@ -106,6 +106,7 @@ Route::middleware(['auth', 'verified', 'role:cashier'])
         Route::post('/customers/quick-create', [BillingController::class, 'quickCreateCustomer'])->name('customers.quick-create');
 
         Route::post('/billing/upsell-suggestion', [BillingController::class, 'upsellSuggestion'])->name('billing.upsell');
+        Route::post('/billing/parse-order', [BillingController::class, 'parseOrderText'])->name('billing.parse-order');
 
         Route::get('/display', [CustomerDisplayController::class, 'show'])->name('display.show');
         Route::get('/display/data', [CustomerDisplayController::class, 'data'])->name('display.data');

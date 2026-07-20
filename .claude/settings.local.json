@@ -19,7 +19,14 @@
       "Bash(netstat -ano)",
       "Bash(powershell -Command \"Get-Process -Name httpd -ErrorAction SilentlyContinue | Select-Object Id,ProcessName\")",
       "Bash(composer require *)",
-      "Bash(xargs -I{} basename {})"
+      "Bash(xargs -I{} basename {})",
+      "Bash(gh repo *)",
+      "PowerShell(gh --version)",
+      "PowerShell(gh repo view RaviPraveen/Individual-Project --json defaultBranchRef -q .defaultBranchRef.name)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git fetch *)",
+      "Bash(grep -n \"renderCart\\(\\)\\\\`\\\\|^        renderCart\\(\\);\\\\|document.getElementById\\('clear-cart-btn'\\)\" resources/views/cashier/billing/index.blade.php)"
     ]
   }
 }

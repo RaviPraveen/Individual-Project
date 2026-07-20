@@ -16,6 +16,33 @@
 
         <div class="row g-3">
             <div class="col-lg-8">
+                @if ($geminiConfigured)
+                    <div class="card mb-3">
+                        <div class="card-header bg-white fw-semibold"><i class="bi bi-stars me-1 text-gold"></i> {{ __('AI Quick Order') }}</div>
+                        <div class="card-body">
+                            <x-input-label for="ai-order-text" :value="__('Type the order in plain language')" />
+                            <div class="input-group">
+                                <input type="text" id="ai-order-text" class="form-control" placeholder="{{ __('e.g. 2kg rice, 1 milk powder, 3 sugar') }}" autocomplete="off">
+                                <button type="button" class="btn btn-outline-primary" id="ai-order-parse-btn"><i class="bi bi-stars"></i> {{ __('Parse with AI') }}</button>
+                            </div>
+                            <div class="small text-danger mt-2 d-none" id="ai-order-error"></div>
+
+                            <div class="mt-3 d-none" id="ai-order-preview">
+                                <div class="small text-muted mb-2">{{ __('Review before adding:') }}</div>
+                                <div id="ai-order-preview-list" class="list-group mb-2"></div>
+                                <button type="button" class="btn btn-primary btn-sm" id="ai-order-add-btn"><i class="bi bi-cart-plus"></i> {{ __('Add to Cart') }}</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="ai-order-cancel-btn">{{ __('Cancel') }}</button>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <div class="card mb-3">
+                        <div class="card-body d-flex align-items-center gap-2 text-muted small">
+                            <i class="bi bi-stars"></i> {{ __('AI Quick Order needs a configured Gemini API key — not available yet.') }}
+                        </div>
+                    </div>
+                @endif
+
                 <div class="card mb-3">
                     <div class="card-body position-relative">
                         <x-input-label for="product-search" :value="__('Scan barcode or search product (Enter to add)')" />
@@ -539,6 +566,124 @@
                 alert('{{ __('Add at least one product to the cart before completing the sale.') }}');
             }
         });
+
+        /* ---------- AI Quick Order (natural-language billing) ---------- */
+        const aiOrderTextInput = document.getElementById('ai-order-text');
+        const aiOrderParseBtn = document.getElementById('ai-order-parse-btn');
+
+        if (aiOrderParseBtn) {
+            const parseOrderUrl = '{{ route('cashier.billing.parse-order') }}';
+            const aiOrderError = document.getElementById('ai-order-error');
+            const aiOrderPreview = document.getElementById('ai-order-preview');
+            const aiOrderPreviewList = document.getElementById('ai-order-preview-list');
+            const aiOrderAddBtn = document.getElementById('ai-order-add-btn');
+            const aiOrderCancelBtn = document.getElementById('ai-order-cancel-btn');
+
+            let aiParsedItems = [];
+
+            function renderAiPreview() {
+                aiOrderPreviewList.innerHTML = '';
+                aiParsedItems.forEach((item, index) => {
+                    const row = document.createElement('div');
+                    row.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    row.innerHTML = `
+                        <span>${item.name}</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="number" class="form-control form-control-sm ai-qty-input" style="width:70px;" min="1" max="${item.stock_qty}" value="${item.quantity}">
+                            <button type="button" class="btn btn-outline-danger btn-sm ai-remove-btn"><i class="bi bi-x"></i></button>
+                        </div>
+                    `;
+                    row.querySelector('.ai-qty-input').addEventListener('input', (e) => {
+                        let qty = parseInt(e.target.value) || 1;
+                        qty = Math.max(1, Math.min(qty, item.stock_qty));
+                        e.target.value = qty;
+                        item.quantity = qty;
+                    });
+                    row.querySelector('.ai-remove-btn').addEventListener('click', () => {
+                        aiParsedItems.splice(index, 1);
+                        renderAiPreview();
+                    });
+                    aiOrderPreviewList.appendChild(row);
+                });
+
+                if (aiParsedItems.length === 0) {
+                    aiOrderPreview.classList.add('d-none');
+                }
+            }
+
+            function resetAiOrderBox() {
+                aiParsedItems = [];
+                aiOrderTextInput.value = '';
+                aiOrderPreview.classList.add('d-none');
+                aiOrderError.classList.add('d-none');
+            }
+
+            aiOrderParseBtn.addEventListener('click', () => {
+                const text = aiOrderTextInput.value.trim();
+                aiOrderError.classList.add('d-none');
+                if (!text) return;
+
+                aiOrderParseBtn.disabled = true;
+                const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+                fetch(parseOrderUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                    body: JSON.stringify({ text }),
+                }).then(r => r.json()).then(data => {
+                    aiOrderParseBtn.disabled = false;
+
+                    if (data.error) {
+                        aiOrderError.textContent = data.error;
+                        aiOrderError.classList.remove('d-none');
+                        return;
+                    }
+
+                    if (!data.items || data.items.length === 0) {
+                        aiOrderError.textContent = '{{ __('No matching products found — try rephrasing or add items manually.') }}';
+                        aiOrderError.classList.remove('d-none');
+                        return;
+                    }
+
+                    aiParsedItems = data.items.map(item => ({ ...item, selling_price: parseFloat(item.selling_price) }));
+                    aiOrderPreview.classList.remove('d-none');
+                    renderAiPreview();
+                }).catch(() => {
+                    aiOrderParseBtn.disabled = false;
+                    aiOrderError.textContent = '{{ __('Something went wrong. Please try again.') }}';
+                    aiOrderError.classList.remove('d-none');
+                });
+            });
+
+            aiOrderAddBtn.addEventListener('click', () => {
+                aiParsedItems.forEach(item => {
+                    addToCart({
+                        id: item.product_id,
+                        name: item.name,
+                        sku: item.sku,
+                        selling_price: item.selling_price,
+                        stock_qty: item.stock_qty,
+                    });
+
+                    const cartItem = cart.find(c => c.product_id === item.product_id);
+                    if (cartItem) {
+                        cartItem.quantity = Math.max(1, Math.min(item.quantity, item.stock_qty));
+                    }
+                });
+                renderCart();
+                window.posToast ? window.posToast('Added to cart from AI Quick Order.', 'success') : null;
+                resetAiOrderBox();
+            });
+
+            aiOrderCancelBtn.addEventListener('click', resetAiOrderBox);
+
+            aiOrderTextInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    aiOrderParseBtn.click();
+                }
+            });
+        }
 
         renderCart();
     </script>

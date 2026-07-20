@@ -5,11 +5,26 @@
     quantities to return, and submit — the server computes the exact
     proportional refund (discount/tax/points-redeemed all accounted for).
 --}}
+@if (isset($stats))
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-lg-4">
+            <x-stat-card icon="bi-arrow-return-left" tone="warning" :label="__('Total Returns')" :value="$stats['total_count']" />
+        </div>
+        <div class="col-6 col-lg-4">
+            <x-stat-card icon="bi-receipt-cutoff" tone="info" :label="__('Returns This Month')" :value="$stats['month_count']" />
+        </div>
+        <div class="col-6 col-lg-4">
+            <x-stat-card icon="bi-cash-stack" tone="danger" :label="__('Refunded This Month')" :value="number_format($stats['month_refunded'], 2)" />
+        </div>
+    </div>
+@endif
+
 <div class="row g-3">
     <div class="col-lg-7">
         <div class="card mb-3">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-search me-1"></i> {{ __('Find a Sale') }}</div>
             <div class="card-body">
-                <x-input-label for="invoice-lookup" :value="__('Find a sale by invoice number')" />
+                <x-input-label for="invoice-lookup" :value="__('Invoice number')" />
                 <div class="input-group">
                     <input type="text" id="invoice-lookup" class="form-control" placeholder="{{ __('e.g. INV-20260719-0008') }}" autocomplete="off">
                     <button type="button" class="btn btn-primary" id="invoice-lookup-btn">{{ __('Find Sale') }}</button>

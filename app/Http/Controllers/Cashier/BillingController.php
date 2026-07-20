@@ -27,7 +27,7 @@ use Throwable;
 
 class BillingController extends Controller
 {
-    public function index(): View
+    public function index(GeminiService $gemini): View
     {
         $billingSettings = BillingSetting::current();
 
@@ -37,6 +37,7 @@ class BillingController extends Controller
             'pointsRedeemValue' => (float) $billingSettings->points_redeem_value,
             'pointsEarnPercent' => $billingSettings->earnPercent(),
             'bagFee' => (float) $billingSettings->bag_fee,
+            'geminiConfigured' => $gemini->isConfigured(),
         ]);
     }
 
@@ -281,6 +282,84 @@ class BillingController extends Controller
         ]);
 
         return response()->json(['suggestion' => $suggestion]);
+    }
+
+    /**
+     * Parses a free-text order ("2kg rice, 1 milk powder, 3 sugar") into
+     * real product_id+quantity pairs by giving Gemini the exact active
+     * product catalog and requiring a strict JSON response. Never invents
+     * products — anything not confidently matched in the catalog is
+     * dropped rather than guessed.
+     */
+    public function parseOrderText(Request $request, GeminiService $gemini): JsonResponse
+    {
+        $validated = $request->validate([
+            'text' => ['required', 'string', 'max:500'],
+        ]);
+
+        if (! $gemini->isConfigured()) {
+            return response()->json(['configured' => false, 'items' => []]);
+        }
+
+        $products = Product::where('is_active', true)->get(['id', 'name', 'sku', 'selling_price', 'stock_qty']);
+        $catalog = $products->map(fn ($p) => "ID {$p->id}: {$p->name} (SKU {$p->sku})")->implode("\n");
+
+        $prompt = 'You are an order-parsing assistant for a supermarket POS. Given the CUSTOMER ORDER TEXT below '.
+            'and the EXACT product catalog (with numeric IDs), identify which catalog products and quantities were '.
+            'requested. Respond with ONLY a JSON array, no other text, no markdown formatting, in this exact shape: '.
+            '[{"product_id": <int>, "quantity": <int>}]. Only use product_id values that appear in the catalog '.
+            "below — never invent one. If a mentioned item has no confident match in the catalog, omit it entirely. ".
+            "If no quantity is stated for an item, use 1.\n\n".
+            "CATALOG:\n{$catalog}\n\n".
+            "ORDER TEXT: \"{$validated['text']}\"";
+
+        $raw = $gemini->generate($prompt);
+
+        AiLog::create([
+            'user_id' => $request->user()->id,
+            'query' => "Natural-language order parse: \"{$validated['text']}\"",
+            'response' => $raw ?? '[AI unavailable — parse not attempted]',
+        ]);
+
+        if ($raw === null) {
+            return response()->json(['configured' => true, 'error' => 'The AI assistant is currently unavailable.', 'items' => []]);
+        }
+
+        $parsed = $this->extractJsonArray($raw);
+
+        if ($parsed === null) {
+            return response()->json(['configured' => true, 'error' => "Couldn't understand that order — try rephrasing or add items manually.", 'items' => []]);
+        }
+
+        $productsById = $products->keyBy('id');
+
+        $items = collect($parsed)
+            ->filter(fn ($row) => is_array($row) && isset($row['product_id']) && $productsById->has((int) $row['product_id']))
+            ->map(function ($row) use ($productsById) {
+                $product = $productsById->get((int) $row['product_id']);
+                $quantity = max(1, (int) ($row['quantity'] ?? 1));
+
+                return [
+                    'product_id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'selling_price' => (float) $product->selling_price,
+                    'stock_qty' => $product->stock_qty,
+                    'quantity' => min($quantity, max(0, $product->stock_qty)),
+                ];
+            })
+            ->filter(fn ($item) => $item['quantity'] > 0)
+            ->values();
+
+        return response()->json(['configured' => true, 'items' => $items]);
+    }
+
+    private function extractJsonArray(string $raw): ?array
+    {
+        $cleaned = trim(preg_replace('/^```(?:json)?\s*|\s*```$/i', '', trim($raw)));
+        $decoded = json_decode($cleaned, true);
+
+        return is_array($decoded) ? $decoded : null;
     }
 
     public function receipt(Sale $sale): View

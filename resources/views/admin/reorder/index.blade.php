@@ -5,6 +5,23 @@
 
     <p class="text-muted small">{{ __('Products at or projected to fall below their reorder level in the next 30 days, sorted by urgency.') }}</p>
 
+    @php
+        $estimatedSpend = $suggestions->sum(fn ($f) => $f['recommended_reorder_qty'] * $f['product']->cost_price);
+        $urgentCount = $suggestions->filter(fn ($f) => $f['projected_stock_30d'] < 0)->count();
+    @endphp
+
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-lg-4">
+            <x-stat-card icon="bi-exclamation-triangle" tone="warning" :label="__('Need Reordering')" :value="$suggestions->count()" />
+        </div>
+        <div class="col-6 col-lg-4">
+            <x-stat-card icon="bi-hourglass-split" tone="danger" :label="__('Urgent (Will Run Out)')" :value="$urgentCount" />
+        </div>
+        <div class="col-6 col-lg-4">
+            <x-stat-card icon="bi-currency-exchange" tone="success" :label="__('Estimated Reorder Spend')" :value="number_format($estimatedSpend, 2)" />
+        </div>
+    </div>
+
     <div class="card mb-3">
         <div class="card-header bg-white fw-semibold"><i class="bi bi-robot me-1"></i> {{ __('AI Purchasing Recommendation') }}</div>
         <div class="card-body">
@@ -25,6 +42,7 @@
     @else
         <form id="reorder-form">
             <div class="card mb-3">
+                <div class="card-header bg-white fw-semibold"><i class="bi bi-truck me-1"></i> {{ __('Draft Purchase Order') }}</div>
                 <div class="card-body">
                     <div class="row g-3 align-items-end">
                         <div class="col-md-6">
@@ -46,6 +64,7 @@
             </div>
 
             <div class="card">
+                <div class="card-header bg-white fw-semibold"><i class="bi bi-list-check me-1"></i> {{ __('Suggested Items') }}</div>
                 <div class="table-responsive">
                     <table class="table table-bordered mb-0">
                         <thead>
