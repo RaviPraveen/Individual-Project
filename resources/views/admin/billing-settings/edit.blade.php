@@ -12,19 +12,10 @@
                 <div class="card mb-3">
                     <div class="card-header bg-white fw-semibold"><i class="bi bi-star me-1 text-gold"></i> {{ __('Star Points — Earning') }}</div>
                     <div class="card-body">
-                        <p class="text-muted small">{{ __('Set this the way you think about it: "customers spend this much, they earn this many points."') }}</p>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <x-input-label for="points_earn_amount" :value="__('Rs spent')" />
-                                <input type="number" name="points_earn_amount" id="points_earn_amount" class="form-control bs-field" min="0.01" step="0.01" value="{{ old('points_earn_amount', $settings->points_earn_amount) }}" required>
-                                <x-input-error :messages="$errors->get('points_earn_amount')" />
-                            </div>
-                            <div class="col-md-6">
-                                <x-input-label for="points_earn_count" :value="__('Points earned')" />
-                                <input type="number" name="points_earn_count" id="points_earn_count" class="form-control bs-field" min="0" step="0.01" value="{{ old('points_earn_count', $settings->points_earn_count) }}" required>
-                                <x-input-error :messages="$errors->get('points_earn_count')" />
-                            </div>
-                        </div>
+                        <p class="text-muted small">{{ __('What percentage of the bill total should be added as points? e.g. enter 10 for 10%.') }}</p>
+                        <x-input-label for="points_earn_percent" :value="__('% of bill earned as points')" />
+                        <input type="number" name="points_earn_percent" id="points_earn_percent" class="form-control bs-field" min="0" max="100" step="0.001" value="{{ old('points_earn_percent', $settings->points_earn_percent) }}" required>
+                        <x-input-error :messages="$errors->get('points_earn_percent')" />
                         <div class="alert alert-secondary mt-3 mb-0 small" id="earn-preview"></div>
                     </div>
                 </div>
@@ -55,30 +46,23 @@
     </div>
 
     <script>
-        const amountInput = document.getElementById('points_earn_amount');
-        const countInput = document.getElementById('points_earn_count');
+        const earnPercentInput = document.getElementById('points_earn_percent');
         const redeemInput = document.getElementById('points_redeem_value');
         const earnPreview = document.getElementById('earn-preview');
         const redeemPreview = document.getElementById('redeem-preview');
 
         function renderPreview() {
-            const amount = parseFloat(amountInput.value) || 0;
-            const count = parseFloat(countInput.value) || 0;
+            const percent = parseFloat(earnPercentInput.value) || 0;
             const redeem = parseFloat(redeemInput.value) || 0;
 
-            if (amount > 0) {
-                const percent = (count / amount) * 100;
-                const exampleBill = 1000;
-                const examplePoints = Math.floor(exampleBill * (count / amount));
-                earnPreview.textContent = `= ${percent.toFixed(3)}% earn rate — e.g. a Rs ${exampleBill.toLocaleString()} bill earns ~${examplePoints} point(s).`;
-            } else {
-                earnPreview.textContent = '{{ __('Enter an amount above 0.') }}';
-            }
+            const exampleBill = 1000;
+            const examplePoints = Math.floor(exampleBill * (percent / 100));
+            earnPreview.textContent = `e.g. a Rs ${exampleBill.toLocaleString()} bill earns ~${examplePoints} point(s).`;
 
             redeemPreview.textContent = `{{ __('e.g. 100 points = Rs ') }}${(100 * redeem).toFixed(2)}`;
         }
 
-        [amountInput, countInput, redeemInput].forEach(el => el.addEventListener('input', renderPreview));
+        [earnPercentInput, redeemInput].forEach(el => el.addEventListener('input', renderPreview));
         renderPreview();
     </script>
 </x-admin-layout>

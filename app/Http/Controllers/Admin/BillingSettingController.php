@@ -20,8 +20,7 @@ class BillingSettingController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'points_earn_amount' => ['required', 'numeric', 'min:0.01'],
-            'points_earn_count' => ['required', 'numeric', 'min:0'],
+            'points_earn_percent' => ['required', 'numeric', 'min:0', 'max:100'],
             'points_redeem_value' => ['required', 'numeric', 'min:0'],
             'bag_fee' => ['required', 'numeric', 'min:0'],
         ]);

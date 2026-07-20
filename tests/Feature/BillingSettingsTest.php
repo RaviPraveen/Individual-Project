@@ -18,18 +18,15 @@ class BillingSettingsTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
 
-        // Change the rate to "Rs 1000 spent = 1 point" (0.1%), from the
-        // 1%-equivalent default (100 spent = 1 point).
+        // Change the rate to 0.1%, from the 1% default.
         $this->actingAs($admin)->put(route('admin.billing-settings.update'), [
-            'points_earn_amount' => 1000,
-            'points_earn_count' => 1,
+            'points_earn_percent' => 0.1,
             'points_redeem_value' => 1,
             'bag_fee' => 0,
         ])->assertRedirect();
 
         $this->assertDatabaseHas('billing_settings', [
-            'points_earn_amount' => 1000,
-            'points_earn_count' => 1,
+            'points_earn_percent' => 0.1,
         ]);
 
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
@@ -55,7 +52,7 @@ class BillingSettingsTest extends TestCase
 
     public function test_bag_fee_is_added_to_total_but_excluded_from_points_and_tax(): void
     {
-        BillingSetting::current()->update(['bag_fee' => 20, 'points_earn_amount' => 100, 'points_earn_count' => 1]);
+        BillingSetting::current()->update(['bag_fee' => 20, 'points_earn_percent' => 1]);
 
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
         $customer = Customer::create(['name' => 'Bag Buyer', 'phone' => '0771112222']);

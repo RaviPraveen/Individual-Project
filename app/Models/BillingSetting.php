@@ -7,8 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class BillingSetting extends Model
 {
     protected $fillable = [
-        'points_earn_amount',
-        'points_earn_count',
+        'points_earn_percent',
         'points_redeem_value',
         'bag_fee',
     ];
@@ -17,12 +16,10 @@ class BillingSetting extends Model
      * Mirrors the migration's column defaults. Without these, a fresh
      * firstOrCreate([]) row would apply the DB defaults on save but the
      * in-memory model returned to the caller would still read those
-     * attributes as null until re-fetched — silently breaking earnPercent()
-     * the very first time the app ever needs this row.
+     * attributes as null until re-fetched.
      */
     protected $attributes = [
-        'points_earn_amount' => 100,
-        'points_earn_count' => 1,
+        'points_earn_percent' => 1,
         'points_redeem_value' => 1,
         'bag_fee' => 0,
     ];
@@ -30,8 +27,7 @@ class BillingSetting extends Model
     protected function casts(): array
     {
         return [
-            'points_earn_amount' => 'decimal:2',
-            'points_earn_count' => 'decimal:2',
+            'points_earn_percent' => 'decimal:3',
             'points_redeem_value' => 'decimal:2',
             'bag_fee' => 'decimal:2',
         ];
@@ -46,14 +42,8 @@ class BillingSetting extends Model
         return static::query()->firstOrCreate([]);
     }
 
-    /**
-     * The admin edits "spend X, earn Y points" directly; the rest of the
-     * codebase still works in percent-of-amount-paid terms internally.
-     */
     public function earnPercent(): float
     {
-        return $this->points_earn_amount > 0
-            ? ((float) $this->points_earn_count / (float) $this->points_earn_amount) * 100
-            : 0.0;
+        return (float) $this->points_earn_percent;
     }
 }
