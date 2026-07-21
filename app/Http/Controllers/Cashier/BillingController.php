@@ -60,7 +60,7 @@ class BillingController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, ActivityLogger $activityLogger): RedirectResponse
     {
         $maxDiscount = config('billing.max_discount_percent');
 
@@ -210,7 +210,7 @@ class BillingController extends Controller
 
         $sale->load('items.product', 'customer');
 
-        app(ActivityLogger::class)->log(
+        $activityLogger->log(
             'sale.created',
             "Sale {$sale->invoice_no} completed for Rs {$sale->total}",
             $sale,

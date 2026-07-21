@@ -72,6 +72,9 @@
                     <a href="{{ route('admin.billing-settings.edit') }}" class="{{ request()->routeIs('admin.billing-settings.*') ? 'active' : '' }}">
                         <i class="bi bi-star"></i> {{ __('Billing Settings') }}
                     </a>
+                    <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                        <i class="bi bi-people-fill"></i> {{ __('User Management') }}
+                    </a>
                 </nav>
             </aside>
 

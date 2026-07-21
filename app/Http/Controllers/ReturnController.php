@@ -9,6 +9,7 @@ use App\Models\ReceiptSetting;
 use App\Models\Sale;
 use App\Models\SaleReturn;
 use App\Models\StockMovement;
+use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -82,7 +83,7 @@ class ReturnController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, ActivityLogger $activityLogger): RedirectResponse
     {
         $validated = $request->validate([
             'sale_id' => ['required', 'exists:sales,id'],
