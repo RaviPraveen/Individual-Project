@@ -58,7 +58,9 @@
       "Bash(cat)",
       "Bash(php /tmp/test_poster.php)",
       "Bash(cp /tmp/hf_image_test2.bin storage/app/hf_test_bg.jpg && ls -la storage/app/hf_test_bg.jpg)",
-      "Bash(php -l app/Http/Controllers/Admin/PromotionPosterController.php)"
+      "Bash(php -l app/Http/Controllers/Admin/PromotionPosterController.php)",
+      "Bash(git check-ignore *)",
+      "Bash(mkdir -p resources/fonts *)"
     ]
   }
 }

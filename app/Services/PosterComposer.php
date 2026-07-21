@@ -188,7 +188,7 @@ class PosterComposer
 
     private function font(string $weight): string
     {
-        return storage_path('app/fonts/Poppins-'.match ($weight) {
+        return resource_path('fonts/Poppins-'.match ($weight) {
             'bold' => 'Bold',
             'semibold' => 'SemiBold',
             default => 'Regular',
