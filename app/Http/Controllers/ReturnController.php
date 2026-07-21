@@ -223,6 +223,13 @@ class ReturnController extends Controller
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
 
+        $activityLogger->log(
+            'sale.returned',
+            "Return {$saleReturn->return_no} processed for Rs {$saleReturn->total_refunded} against sale {$saleReturn->sale->invoice_no}",
+            $saleReturn,
+            $request->user()->id
+        );
+
         return redirect()->route('returns.show', $saleReturn)->with('success', 'Return processed successfully.');
     }
 
