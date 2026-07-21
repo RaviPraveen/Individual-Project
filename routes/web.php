@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\BillingSettingController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -91,6 +92,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         // User Management (admin only)
         Route::resource('users', UserController::class)->except('show');
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+
+        Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
     });
 
 Route::middleware(['auth', 'verified', 'role:admin,cashier'])->group(function () {

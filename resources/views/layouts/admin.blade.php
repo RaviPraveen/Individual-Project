@@ -75,6 +75,9 @@
                     <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                         <i class="bi bi-people-fill"></i> {{ __('User Management') }}
                     </a>
+                    <a href="{{ route('admin.activity-log.index') }}" class="{{ request()->routeIs('admin.activity-log.*') ? 'active' : '' }}">
+                        <i class="bi bi-clock-history"></i> {{ __('Activity Log') }}
+                    </a>
                 </nav>
             </aside>
 
