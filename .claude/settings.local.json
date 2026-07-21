@@ -52,7 +52,13 @@
       "Bash(curl -sL \"https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-SemiBold.ttf\" -o Poppins-SemiBold.ttf -w \"SemiBold STATUS:%{http_code} SIZE:%{size_download}\\\\n\" --max-time 30)",
       "Bash(curl -sL \"https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Regular.ttf\" -o Poppins-Regular.ttf -w \"Regular STATUS:%{http_code} SIZE:%{size_download}\\\\n\" --max-time 30)",
       "Bash(rm -f PlusJakartaSans-Bold.ttf)",
-      "Bash(file *.ttf)"
+      "Bash(file *.ttf)",
+      "Bash(php -l app/Services/PosterComposer.php)",
+      "Bash(php -l app/Services/AiService.php)",
+      "Bash(cat)",
+      "Bash(php /tmp/test_poster.php)",
+      "Bash(cp /tmp/hf_image_test2.bin storage/app/hf_test_bg.jpg && ls -la storage/app/hf_test_bg.jpg)",
+      "Bash(php -l app/Http/Controllers/Admin/PromotionPosterController.php)"
     ]
   }
 }

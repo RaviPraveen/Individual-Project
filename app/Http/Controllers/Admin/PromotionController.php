@@ -127,6 +127,9 @@ class PromotionController extends Controller
         if ($promotion->poster_path) {
             Storage::disk('public')->delete($promotion->poster_path);
         }
+        if ($promotion->pending_poster_path && $promotion->pending_poster_path !== $promotion->poster_path) {
+            Storage::disk('public')->delete($promotion->pending_poster_path);
+        }
 
         $title = $promotion->title;
         $promotion->delete();
@@ -174,6 +177,9 @@ class PromotionController extends Controller
                 'delete' => tap($promotion, function ($p) {
                     if ($p->poster_path) {
                         Storage::disk('public')->delete($p->poster_path);
+                    }
+                    if ($p->pending_poster_path && $p->pending_poster_path !== $p->poster_path) {
+                        Storage::disk('public')->delete($p->pending_poster_path);
                     }
                 })->delete(),
             };

@@ -30,6 +30,8 @@ class Promotion extends Model
         'poster_path',
         'poster_source',
         'ai_generations',
+        'pending_poster_path',
+        'pending_poster_used_ai',
         'start_date',
         'end_date',
         'display_duration',
@@ -52,6 +54,7 @@ class Promotion extends Model
             'start_date' => 'datetime',
             'end_date' => 'datetime',
             'is_featured' => 'boolean',
+            'pending_poster_used_ai' => 'boolean',
         ];
     }
 
