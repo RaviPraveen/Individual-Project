@@ -6,15 +6,14 @@ use App\Models\ActivityLog;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Thin, deliberately dumb wrapper around ActivityLog::record() — exists so
- * every call site reads the same way ("record what happened, in plain
- * English, tied to who did it") rather than each controller building the
- * fillable array by hand.
+ * Thin wrapper around ActivityLog::record() that defaults the actor to the
+ * currently authenticated user, so call sites don't each have to thread
+ * $request->user()->id through.
  */
 class ActivityLogger
 {
-    public function log(?int $userId, string $action, string $description, ?Model $subject = null): ActivityLog
+    public function log(string $action, string $description, ?Model $subject = null, ?int $userId = null): ActivityLog
     {
-        return ActivityLog::record($userId, $action, $description, $subject);
+        return ActivityLog::record($userId ?? auth()->id(), $action, $description, $subject);
     }
 }
