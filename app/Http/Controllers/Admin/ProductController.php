@@ -54,10 +54,23 @@ class ProductController extends Controller
         return view('admin.products.edit', compact('product', 'categories'));
     }
 
-    public function update(Request $request, Product $product): RedirectResponse
+    public function update(Request $request, Product $product, ActivityLogger $activityLogger): RedirectResponse
     {
         $validated = $this->validateProduct($request, $product);
         $validated['is_active'] = $request->boolean('is_active');
+
+        $priceChanged = (float) $product->cost_price !== (float) $validated['cost_price']
+            || (float) $product->selling_price !== (float) $validated['selling_price'];
+
+        if ($priceChanged) {
+            $activityLogger->log(
+                'product.price_changed',
+                "{$product->name}: cost {$product->cost_price} → {$validated['cost_price']}, ".
+                    "selling price {$product->selling_price} → {$validated['selling_price']}",
+                $product,
+                $request->user()->id
+            );
+        }
 
         $product->update($validated);
 
@@ -77,7 +90,7 @@ class ProductController extends Controller
         return redirect()->route('admin.products.index')->with('success', 'Product deleted.');
     }
 
-    public function adjustStock(Request $request, Product $product): RedirectResponse
+    public function adjustStock(Request $request, Product $product, ActivityLogger $activityLogger): RedirectResponse
     {
         $validated = $request->validate([
             'quantity' => ['required', 'integer', 'not_in:0'],
@@ -99,6 +112,13 @@ class ProductController extends Controller
             'reason' => $validated['reason'],
             'recorded_by' => $request->user()->id,
         ]);
+
+        $activityLogger->log(
+            'stock.adjusted',
+            "{$product->name}: {$validated['quantity']} ({$validated['reason']}) — new stock {$newStock}",
+            $product,
+            $request->user()->id
+        );
 
         return redirect()->route('admin.products.index')->with('success', 'Stock adjusted.');
     }
@@ -132,6 +152,7 @@ class ProductController extends Controller
             'selling_price' => ['required', 'numeric', 'min:0'],
             'stock_qty' => ['required', 'integer', 'min:0'],
             'reorder_level' => ['required', 'integer', 'min:0'],
+            'expiry_date' => ['nullable', 'date'],
             'unit' => ['required', 'string', 'max:50'],
         ]);
     }

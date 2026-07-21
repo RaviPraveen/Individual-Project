@@ -61,6 +61,12 @@
     </div>
 </div>
 
+<div class="mb-3">
+    <x-input-label for="expiry_date" :value="__('Expiry Date (optional, for perishables)')" />
+    <x-text-input id="expiry_date" name="expiry_date" type="date" :value="old('expiry_date', $product?->expiry_date?->format('Y-m-d'))" />
+    <x-input-error :messages="$errors->get('expiry_date')" />
+</div>
+
 @if ($product)
     <div class="mb-3 form-check">
         <input id="is_active" type="checkbox" class="form-check-input" name="is_active" value="1" @checked(old('is_active', $product->is_active))>
