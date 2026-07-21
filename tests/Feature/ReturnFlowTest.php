@@ -102,6 +102,45 @@ class ReturnFlowTest extends TestCase
         ]);
     }
 
+    /**
+     * The invoice-lookup JSON is consumed by inline JS in
+     * returns/_content.blade.php that reads these exact keys (sale_id,
+     * date, items.*.sale_item_id, items.*.already_returned,
+     * items.*.max_returnable) to populate hidden inputs later submitted
+     * to returns.store. A prior bug had the controller and the JS drift
+     * out of sync on these names (JS read `id`/`created_at`/`returned_quantity`
+     * while the controller returned `sale_id`/`date`/`already_returned`),
+     * which silently submitted "undefined" as the sale/item IDs. Pin the
+     * exact shape here so that regression can't reappear unnoticed.
+     */
+    public function test_return_lookup_json_matches_the_shape_the_frontend_depends_on(): void
+    {
+        $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
+        $product = Product::create([
+            'name' => 'Sugar 1kg', 'sku' => 'SKU-SUGAR-LOOKUP', 'cost_price' => 200, 'selling_price' => 500,
+            'stock_qty' => 20, 'reorder_level' => 5,
+        ]);
+
+        $this->actingAs($cashier)->post(route('cashier.billing.store'), [
+            'items' => [['product_id' => $product->id, 'quantity' => 2]],
+            'discount_percent' => 0,
+            'points_to_redeem' => 0,
+            'payment_method' => 'cash',
+        ])->assertRedirect();
+
+        $sale = Sale::firstOrFail();
+
+        $response = $this->actingAs($cashier)
+            ->getJson(route('returns.lookup', ['invoice_no' => $sale->invoice_no]));
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'sale_id', 'invoice_no', 'date', 'customer_name', 'total',
+            'items' => [['sale_item_id', 'product_name', 'quantity', 'unit_price', 'already_returned', 'max_returnable']],
+        ]);
+        $response->assertJson(['sale_id' => $sale->id]);
+    }
+
     public function test_cannot_return_more_than_was_sold(): void
     {
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);

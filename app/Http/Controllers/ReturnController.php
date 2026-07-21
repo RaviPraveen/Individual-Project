@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\ReceiptSetting;
 use App\Models\Sale;
 use App\Models\SaleReturn;
+use App\Models\Setting;
 use App\Models\StockMovement;
 use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
@@ -104,7 +105,7 @@ class ReturnController extends Controller
             $saleReturn = DB::transaction(function () use ($validated, $requestedItems, $request) {
                 $sale = Sale::with('items')->lockForUpdate()->findOrFail($validated['sale_id']);
 
-                $taxPercent = (float) config('billing.tax_percent');
+                $taxPercent = (float) Setting::get('tax_rate', config('billing.tax_percent'));
                 $discountRatio = $sale->subtotal > 0 ? ((float) $sale->discount / (float) $sale->subtotal) : 0;
                 // Uses the value actually redeemed at time of sale (not the
                 // current BillingSetting rate) so a refund stays correct
