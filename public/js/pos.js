@@ -56,7 +56,7 @@
       });
     }
 
-    /* ---------- SweetAlert2 global alert override helper ---------- */
+    /* ---------- SweetAlert2 global alert/confirm helpers ---------- */
     if (window.Swal) {
       window.posAlert = function(title, text, icon) {
         return Swal.fire({
@@ -70,6 +70,50 @@
           }
         });
       };
+
+      // Resolves true/false — intended for `if (await window.posConfirm(...))`
+      // ahead of a destructive/state-changing form submit.
+      window.posConfirm = function(title, text, icon) {
+        return Swal.fire({
+          title: title || '',
+          text: text || '',
+          icon: icon || 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#5B5CEB',
+          cancelButtonColor: '#94A3B8',
+          confirmButtonText: 'Confirm',
+          customClass: {
+            popup: 'rounded-4 shadow-lg',
+            confirmButton: 'btn btn-primary px-4 me-2',
+            cancelButton: 'btn btn-outline-secondary px-4'
+          },
+          buttonsStyling: false,
+        }).then(function (result) { return result.isConfirmed; });
+      };
+
+      // Wire up any form/button carrying data-confirm="..." to a SweetAlert2
+      // confirmation instead of the native confirm() dialog. Forms submit
+      // themselves on confirm; plain buttons fire a 'pos-confirmed' event
+      // so a page-specific handler can act on it.
+      document.querySelectorAll('[data-confirm]').forEach(function (el) {
+        el.addEventListener('click', function (e) {
+          if (el.dataset.confirmed === '1') return;
+          e.preventDefault();
+
+          window.posConfirm(el.dataset.confirm, el.dataset.confirmText || '', el.dataset.confirmIcon || 'warning').then(function (ok) {
+            if (!ok) return;
+            el.dataset.confirmed = '1';
+
+            if (el.tagName === 'FORM') {
+              el.requestSubmit ? el.requestSubmit() : el.submit();
+            } else if (el.form) {
+              el.form.requestSubmit ? el.form.requestSubmit(el) : el.form.submit();
+            } else {
+              el.dispatchEvent(new CustomEvent('pos-confirmed', { bubbles: true }));
+            }
+          });
+        });
+      });
     }
   });
 

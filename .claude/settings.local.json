@@ -41,7 +41,9 @@
       "Bash(git add *)",
       "Bash(php -l app/Http/Controllers/Admin/RevenueController.php)",
       "Bash(php -l app/Http/Controllers/Admin/ReportController.php)",
-      "Bash(php -l app/Http/Controllers/Admin/SettingController.php)"
+      "Bash(php -l app/Http/Controllers/Admin/SettingController.php)",
+      "Bash(php -l app/Http/Controllers/Admin/PromotionController.php)",
+      "Bash(php -l app/Models/Promotion.php)"
     ]
   }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ForecastController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\ReceiptSettingController;
 use App\Http\Controllers\Admin\ReorderController;
@@ -74,6 +75,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             Route::get('/dead-stock', [ReportController::class, 'deadStock'])->name('dead-stock');
             Route::get('/profit', [ReportController::class, 'profit'])->name('profit');
         });
+
+        Route::resource('promotions', PromotionController::class)->except('show');
+        Route::post('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
+        Route::post('promotions-bulk-action', [PromotionController::class, 'bulkAction'])->name('promotions.bulk-action');
 
         Route::prefix('revenue')->name('revenue.')->group(function () {
             Route::get('/', [RevenueController::class, 'index'])->name('index');

@@ -66,6 +66,11 @@
                         <i class="bi bi-arrow-return-left"></i> {{ __('Returns') }}
                     </a>
 
+                    <div class="pos-nav-label">{{ __('Marketing') }}</div>
+                    <a href="{{ route('admin.promotions.index') }}" class="{{ request()->routeIs('admin.promotions.*') ? 'active' : '' }}">
+                        <i class="bi bi-megaphone"></i> {{ __('Promotion Manager') }}
+                    </a>
+
                     <div class="pos-nav-label">{{ __('Analytics & AI') }}</div>
                     <a href="{{ route('admin.revenue.index') }}" class="{{ request()->routeIs('admin.revenue.*') ? 'active' : '' }}">
                         <i class="bi bi-cash-coin"></i> {{ __('Revenue') }}
