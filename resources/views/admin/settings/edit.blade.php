@@ -50,6 +50,22 @@
                     </div>
                 </div>
 
+                <div class="card mb-3">
+                    <div class="card-header bg-white fw-semibold d-flex align-items-center gap-2">
+                        <span class="icon-badge bg-primary-subtle text-primary" style="width:32px;height:32px;font-size:1rem;"><i class="bi bi-graph-down-arrow"></i></span>
+                        {{ __('Revenue & Margin') }}
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small">{{ __('Products or categories with a gross margin below this percentage are flagged on the Revenue by Product / by Category pages.') }}</p>
+                        <x-input-label for="low_margin_threshold_percent" :value="__('Low-margin warning threshold')" />
+                        <div class="input-group">
+                            <input type="number" name="low_margin_threshold_percent" id="low_margin_threshold_percent" class="form-control" min="0" max="100" step="0.1" value="{{ old('low_margin_threshold_percent', $lowMarginThreshold) }}" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <x-input-error :messages="$errors->get('low_margin_threshold_percent')" />
+                    </div>
+                </div>
+
                 <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-1"></i>{{ __('Save') }}</button>
             </form>
         </div>

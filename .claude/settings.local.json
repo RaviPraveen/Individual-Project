@@ -38,7 +38,10 @@
       "Bash(powershell -Command \"Get-Process mysqld -ErrorAction SilentlyContinue\")",
       "Bash(powershell -Command \"Start-Process 'C:\\\\xampp\\\\mysql\\\\bin\\\\mysqld.exe' -ArgumentList '--defaults-file=C:\\\\xampp\\\\mysql\\\\bin\\\\my.ini' -WindowStyle Hidden\")",
       "Bash(git status *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(php -l app/Http/Controllers/Admin/RevenueController.php)",
+      "Bash(php -l app/Http/Controllers/Admin/ReportController.php)",
+      "Bash(php -l app/Http/Controllers/Admin/SettingController.php)"
     ]
   }
 }

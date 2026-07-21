@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\ReceiptSettingController;
 use App\Http\Controllers\Admin\ReorderController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\RevenueController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\SupplierReturnController;
@@ -72,6 +73,13 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             Route::get('/near-expiry', [ReportController::class, 'nearExpiry'])->name('near-expiry');
             Route::get('/dead-stock', [ReportController::class, 'deadStock'])->name('dead-stock');
             Route::get('/profit', [ReportController::class, 'profit'])->name('profit');
+        });
+
+        Route::prefix('revenue')->name('revenue.')->group(function () {
+            Route::get('/', [RevenueController::class, 'index'])->name('index');
+            Route::get('/by-period', [RevenueController::class, 'byPeriod'])->name('by-period');
+            Route::get('/by-product', [RevenueController::class, 'byProduct'])->name('by-product');
+            Route::get('/by-category', [RevenueController::class, 'byCategory'])->name('by-category');
         });
 
         Route::get('/forecasts', [ForecastController::class, 'index'])->name('forecasts.index');

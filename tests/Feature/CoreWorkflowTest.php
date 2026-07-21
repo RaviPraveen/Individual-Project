@@ -261,6 +261,7 @@ class CoreWorkflowTest extends TestCase
             'tax_rate' => 10,
             'currency_symbol' => 'Rs',
             'low_stock_threshold_default' => 5,
+            'low_margin_threshold_percent' => 10,
         ])->assertRedirect();
 
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);

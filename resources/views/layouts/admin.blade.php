@@ -67,6 +67,9 @@
                     </a>
 
                     <div class="pos-nav-label">{{ __('Analytics & AI') }}</div>
+                    <a href="{{ route('admin.revenue.index') }}" class="{{ request()->routeIs('admin.revenue.*') ? 'active' : '' }}">
+                        <i class="bi bi-cash-coin"></i> {{ __('Revenue') }}
+                    </a>
                     <a href="{{ route('admin.reports.index') }}" class="{{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                         <i class="bi bi-bar-chart-line"></i> {{ __('Reports') }}
                     </a>
