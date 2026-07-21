@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AiLog;
 use App\Models\Supplier;
 use App\Services\ForecastService;
-use App\Services\GeminiService;
+use App\Services\AiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +16,7 @@ class ReorderController extends Controller
 {
     public function __construct(
         private ForecastService $forecastService,
-        private GeminiService $gemini,
+        private AiService $gemini,
     ) {}
 
     public function index(Request $request): View
@@ -73,7 +73,7 @@ class ReorderController extends Controller
     }
 
     /**
-     * Cached briefly so repeated visits don't re-call Gemini. See
+     * Cached briefly so repeated visits don't re-call the AI service. See
      * DashboardController::businessSummary() for why a null narrative is
      * cached as '' rather than a literal null.
      */

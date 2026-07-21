@@ -67,6 +67,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])
 
         Route::get('/ai-chat', [AiChatController::class, 'index'])->name('ai-chat.index');
         Route::post('/ai-chat', [AiChatController::class, 'ask'])->name('ai-chat.ask');
+        Route::get('/ai-chat/conversations/{conversation}', [AiChatController::class, 'switchConversation'])->name('ai-chat.conversations.switch');
+        Route::patch('/ai-chat/conversations/{conversation}', [AiChatController::class, 'renameConversation'])->name('ai-chat.conversations.rename');
+        Route::delete('/ai-chat/conversations/{conversation}', [AiChatController::class, 'deleteConversation'])->name('ai-chat.conversations.delete');
+        Route::delete('/ai-chat/conversations/{conversation}/messages', [AiChatController::class, 'clearConversation'])->name('ai-chat.conversations.clear');
+        Route::patch('/ai-chat/messages/{log}/feedback', [AiChatController::class, 'feedback'])->name('ai-chat.messages.feedback');
 
         Route::prefix('receipt-settings')->name('receipt-settings.')->group(function () {
             Route::get('/', [ReceiptSettingController::class, 'edit'])->name('edit');
@@ -114,6 +119,11 @@ Route::middleware(['auth', 'verified', 'role:cashier'])
 
         Route::get('/ai-chat', [AiChatController::class, 'index'])->name('ai-chat.index');
         Route::post('/ai-chat', [AiChatController::class, 'ask'])->name('ai-chat.ask');
+        Route::get('/ai-chat/conversations/{conversation}', [AiChatController::class, 'switchConversation'])->name('ai-chat.conversations.switch');
+        Route::patch('/ai-chat/conversations/{conversation}', [AiChatController::class, 'renameConversation'])->name('ai-chat.conversations.rename');
+        Route::delete('/ai-chat/conversations/{conversation}', [AiChatController::class, 'deleteConversation'])->name('ai-chat.conversations.delete');
+        Route::delete('/ai-chat/conversations/{conversation}/messages', [AiChatController::class, 'clearConversation'])->name('ai-chat.conversations.clear');
+        Route::patch('/ai-chat/messages/{log}/feedback', [AiChatController::class, 'feedback'])->name('ai-chat.messages.feedback');
     });
 
 Route::middleware('auth')->group(function () {

@@ -9,12 +9,27 @@ class AiLog extends Model
 {
     protected $fillable = [
         'user_id',
+        'conversation_id',
         'query',
         'response',
+        'widget',
+        'feedback',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'widget' => 'array',
+        ];
+    }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function conversation(): BelongsTo
+    {
+        return $this->belongsTo(AiConversation::class, 'conversation_id');
     }
 }

@@ -17,6 +17,7 @@ class Product extends Model
         'selling_price',
         'stock_qty',
         'reorder_level',
+        'expiry_date',
         'unit',
         'is_active',
     ];
@@ -27,6 +28,7 @@ class Product extends Model
             'cost_price' => 'decimal:2',
             'selling_price' => 'decimal:2',
             'is_active' => 'boolean',
+            'expiry_date' => 'date',
         ];
     }
 
@@ -53,5 +55,12 @@ class Product extends Model
     public function isLowStock(): bool
     {
         return $this->stock_qty <= $this->reorder_level;
+    }
+
+    public function isNearExpiry(int $days = 7): bool
+    {
+        return $this->expiry_date !== null
+            && ! $this->expiry_date->isPast()
+            && $this->expiry_date->lte(now()->addDays($days));
     }
 }

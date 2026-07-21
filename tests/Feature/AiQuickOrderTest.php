@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Product;
 use App\Models\User;
-use App\Services\GeminiService;
+use App\Services\AiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -12,7 +12,7 @@ class AiQuickOrderTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_returns_unconfigured_when_gemini_has_no_api_key(): void
+    public function test_returns_unconfigured_when_ai_service_has_no_api_key(): void
     {
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
 
@@ -35,7 +35,7 @@ class AiQuickOrderTest extends TestCase
             'stock_qty' => 10, 'reorder_level' => 5,
         ]);
 
-        $this->mock(GeminiService::class, function ($mock) use ($rice, $milk) {
+        $this->mock(AiService::class, function ($mock) use ($rice, $milk) {
             $mock->shouldReceive('isConfigured')->andReturn(true);
             $mock->shouldReceive('generate')->andReturn(json_encode([
                 ['product_id' => $rice->id, 'quantity' => 10], // exceeds stock of 3
@@ -62,7 +62,7 @@ class AiQuickOrderTest extends TestCase
     {
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
 
-        $this->mock(GeminiService::class, function ($mock) {
+        $this->mock(AiService::class, function ($mock) {
             $mock->shouldReceive('isConfigured')->andReturn(true);
             $mock->shouldReceive('generate')->andReturn('Sorry, I cannot help with that.');
         });

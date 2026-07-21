@@ -38,7 +38,7 @@
                 @else
                     <div class="card mb-3">
                         <div class="card-body d-flex align-items-center gap-2 text-muted small">
-                            <i class="bi bi-stars"></i> {{ __('AI Quick Order needs a configured Gemini API key — not available yet.') }}
+                            <i class="bi bi-stars"></i> {{ __('AI Quick Order needs a configured AI service — not available yet.') }}
                         </div>
                     </div>
                 @endif

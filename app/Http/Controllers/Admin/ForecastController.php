@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AiLog;
 use App\Models\Product;
 use App\Services\ForecastService;
-use App\Services\GeminiService;
+use App\Services\AiService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -14,7 +14,7 @@ class ForecastController extends Controller
 {
     public function __construct(
         private ForecastService $forecastService,
-        private GeminiService $gemini,
+        private AiService $gemini,
     ) {}
 
     public function index(): View

@@ -9,7 +9,7 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleReturn;
 use App\Models\Supplier;
-use App\Services\GeminiService;
+use App\Services\AiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +17,7 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __construct(private GeminiService $gemini) {}
+    public function __construct(private AiService $gemini) {}
 
     public function index(Request $request): View
     {
@@ -96,12 +96,12 @@ class DashboardController extends Controller
     }
 
     /**
-     * Cached per half-hour so a busy dashboard doesn't re-call Gemini (or
-     * write a fresh ai_logs row) on every single page load.
+     * Cached per half-hour so a busy dashboard doesn't re-call the AI service
+     * (or write a fresh ai_logs row) on every single page load.
      *
      * Cache::remember() can't tell "cached null" apart from "cache miss" — it
      * re-runs the callback forever if the value is null, which it always is
-     * while Gemini is unconfigured. Cache an empty string as the "no
+     * while the AI service is unconfigured. Cache an empty string as the "no
      * narrative" sentinel instead, and translate it back to null for the view.
      */
     private function businessSummary(Request $request, array $stats, $topCategory): ?string

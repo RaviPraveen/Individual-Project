@@ -16,7 +16,7 @@
                     <p class="mb-0">{{ $narrative }}</p>
                 @else
                     <div class="alert alert-secondary mb-0">
-                        {{ __('AI narrative is currently unavailable (Gemini API not configured or unreachable). Showing computed data below.') }}
+                        {{ __('AI narrative is currently unavailable (AI service not configured or unreachable). Showing computed data below.') }}
                     </div>
                 @endif
             </div>

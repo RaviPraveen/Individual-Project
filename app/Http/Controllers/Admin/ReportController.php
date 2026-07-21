@@ -7,7 +7,7 @@ use App\Models\AiLog;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
-use App\Services\GeminiService;
+use App\Services\AiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
-    public function __construct(private GeminiService $gemini) {}
+    public function __construct(private AiService $gemini) {}
 
     public function index(): View
     {
@@ -185,7 +185,7 @@ class ReportController extends Controller
 
     /**
      * Cached per date-range+row-count so repeated visits to the same range
-     * don't re-call Gemini. See DashboardController::businessSummary() for
+     * don't re-call the AI service. See DashboardController::businessSummary() for
      * why a null narrative is cached as '' rather than a literal null.
      */
     private function profitNarrative(Request $request, $rows, Carbon $start, Carbon $end): ?string

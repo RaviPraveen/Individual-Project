@@ -12,7 +12,7 @@ use App\Models\Product;
 use App\Models\ReceiptSetting;
 use App\Models\Sale;
 use App\Models\StockMovement;
-use App\Services\GeminiService;
+use App\Services\AiService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -27,7 +27,7 @@ use Throwable;
 
 class BillingController extends Controller
 {
-    public function index(GeminiService $gemini): View
+    public function index(AiService $gemini): View
     {
         $billingSettings = BillingSetting::current();
 
@@ -230,7 +230,7 @@ class BillingController extends Controller
         return redirect()->route('cashier.billing.receipt', $sale)->with('success', 'Sale completed.');
     }
 
-    public function upsellSuggestion(Request $request, GeminiService $gemini): JsonResponse
+    public function upsellSuggestion(Request $request, AiService $gemini): JsonResponse
     {
         $validated = $request->validate([
             'customer_id' => ['required', 'exists:customers,id'],
@@ -286,12 +286,12 @@ class BillingController extends Controller
 
     /**
      * Parses a free-text order ("2kg rice, 1 milk powder, 3 sugar") into
-     * real product_id+quantity pairs by giving Gemini the exact active
+     * real product_id+quantity pairs by giving the AI service the exact active
      * product catalog and requiring a strict JSON response. Never invents
      * products — anything not confidently matched in the catalog is
      * dropped rather than guessed.
      */
-    public function parseOrderText(Request $request, GeminiService $gemini): JsonResponse
+    public function parseOrderText(Request $request, AiService $gemini): JsonResponse
     {
         $validated = $request->validate([
             'text' => ['required', 'string', 'max:500'],

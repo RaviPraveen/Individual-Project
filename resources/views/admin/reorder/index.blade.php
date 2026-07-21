@@ -30,7 +30,7 @@
             @elseif ($suggestions->isEmpty())
                 <p class="mb-0 text-muted">{{ __('Nothing needs reordering right now.') }}</p>
             @else
-                <p class="mb-0 text-muted">{{ __('AI narrative is currently unavailable (Gemini API not configured or unreachable). Review the figures below instead.') }}</p>
+                <p class="mb-0 text-muted">{{ __('AI narrative is currently unavailable (AI service not configured or unreachable). Review the figures below instead.') }}</p>
             @endif
         </div>
     </div>

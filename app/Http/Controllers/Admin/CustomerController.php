@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AiLog;
 use App\Models\Customer;
-use App\Services\GeminiService;
+use App\Services\AiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -61,7 +61,7 @@ class CustomerController extends Controller
         return redirect()->route('admin.customers.index')->with('success', 'Customer deleted.');
     }
 
-    public function behavior(Request $request, Customer $customer, GeminiService $gemini): View
+    public function behavior(Request $request, Customer $customer, AiService $gemini): View
     {
         $totalOrders = $customer->sales()->count();
         $totalSpend = (float) $customer->sales()->sum('total');

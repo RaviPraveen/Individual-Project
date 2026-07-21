@@ -35,9 +35,9 @@ return [
         ],
     ],
 
-    'gemini' => [
-        'key' => env('GEMINI_API_KEY'),
-        'model' => env('GEMINI_MODEL', 'gemini-flash-3'),
+    'huggingface' => [
+        'key' => env('HUGGINGFACE_API_KEY'),
+        'model' => env('HUGGINGFACE_MODEL', 'meta-llama/Llama-3.1-8B-Instruct'),
     ],
 
 ];

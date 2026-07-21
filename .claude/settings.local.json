@@ -26,7 +26,12 @@
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
       "Bash(git fetch *)",
-      "Bash(grep -n \"renderCart\\(\\)\\\\`\\\\|^        renderCart\\(\\);\\\\|document.getElementById\\('clear-cart-btn'\\)\" resources/views/cashier/billing/index.blade.php)"
+      "Bash(grep -n \"renderCart\\(\\)\\\\`\\\\|^        renderCart\\(\\);\\\\|document.getElementById\\('clear-cart-btn'\\)\" resources/views/cashier/billing/index.blade.php)",
+      "Bash(php artisan tinker '--execute= *)",
+      "Bash(powershell -Command \"Get-Process -Name php -ErrorAction SilentlyContinue | Select-Object Id,ProcessName\")",
+      "Bash(powershell -Command \"Stop-Process -Id 2916 -Force -ErrorAction SilentlyContinue; Stop-Process -Id 14376 -Force -ErrorAction SilentlyContinue\")",
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)"
     ]
   }
 }

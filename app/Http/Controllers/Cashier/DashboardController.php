@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Cashier;
 use App\Http\Controllers\Controller;
 use App\Models\AiLog;
 use App\Services\CashierDashboardService;
-use App\Services\GeminiService;
+use App\Services\AiService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -13,7 +13,7 @@ class DashboardController extends Controller
 {
     public function __construct(
         private CashierDashboardService $dashboard,
-        private GeminiService $gemini,
+        private AiService $gemini,
     ) {}
 
     public function index(Request $request): View
