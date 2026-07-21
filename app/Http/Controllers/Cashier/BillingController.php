@@ -11,6 +11,7 @@ use App\Models\LoyaltyPointTransaction;
 use App\Models\Product;
 use App\Models\ReceiptSetting;
 use App\Models\Sale;
+use App\Models\Setting;
 use App\Models\StockMovement;
 use App\Services\ActivityLogger;
 use App\Services\AiService;
@@ -34,7 +35,7 @@ class BillingController extends Controller
 
         return view('cashier.billing.index', [
             'maxDiscountPercent' => config('billing.max_discount_percent'),
-            'taxPercent' => config('billing.tax_percent'),
+            'taxPercent' => (float) Setting::get('tax_rate', config('billing.tax_percent')),
             'pointsRedeemValue' => (float) $billingSettings->points_redeem_value,
             'pointsEarnPercent' => $billingSettings->earnPercent(),
             'bagFee' => (float) $billingSettings->bag_fee,
@@ -107,7 +108,7 @@ class BillingController extends Controller
 
                 $discountPercent = $validated['discount_percent'] ?? 0;
                 $discountAmount = round($subtotal * $discountPercent / 100, 2);
-                $taxPercent = config('billing.tax_percent');
+                $taxPercent = (float) Setting::get('tax_rate', config('billing.tax_percent'));
                 $taxAmount = round(($subtotal - $discountAmount) * $taxPercent / 100, 2);
                 $totalBeforePoints = $subtotal - $discountAmount + $taxAmount;
 
@@ -155,6 +156,7 @@ class BillingController extends Controller
                         'product_id' => $product->id,
                         'quantity' => $quantity,
                         'unit_price' => $product->selling_price,
+                        'cost_price' => $product->cost_price,
                         'line_total' => $product->selling_price * $quantity,
                     ]);
 
