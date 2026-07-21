@@ -38,6 +38,7 @@ return [
     'huggingface' => [
         'key' => env('HUGGINGFACE_API_KEY'),
         'model' => env('HUGGINGFACE_MODEL', 'meta-llama/Llama-3.1-8B-Instruct'),
+        'image_model' => env('HUGGINGFACE_IMAGE_MODEL', 'stabilityai/stable-diffusion-3-medium-diffusers'),
     ],
 
 ];

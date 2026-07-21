@@ -43,7 +43,16 @@
       "Bash(php -l app/Http/Controllers/Admin/ReportController.php)",
       "Bash(php -l app/Http/Controllers/Admin/SettingController.php)",
       "Bash(php -l app/Http/Controllers/Admin/PromotionController.php)",
-      "Bash(php -l app/Models/Promotion.php)"
+      "Bash(php -l app/Models/Promotion.php)",
+      "WebSearch",
+      "Bash(php -m)",
+      "Bash(php -r \"var_dump\\(function_exists\\('imagettftext'\\)\\);\")",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/google/fonts/main/ofl/plusjakartasans/PlusJakartaSans%5Bwght%5D.ttf\" -o storage/app/fonts/PlusJakartaSans-Bold.ttf -w \"STATUS:%{http_code} SIZE:%{size_download}\\\\n\" --max-time 30)",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Bold.ttf\" -o Poppins-Bold.ttf -w \"Bold STATUS:%{http_code} SIZE:%{size_download}\\\\n\" --max-time 30)",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-SemiBold.ttf\" -o Poppins-SemiBold.ttf -w \"SemiBold STATUS:%{http_code} SIZE:%{size_download}\\\\n\" --max-time 30)",
+      "Bash(curl -sL \"https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Regular.ttf\" -o Poppins-Regular.ttf -w \"Regular STATUS:%{http_code} SIZE:%{size_download}\\\\n\" --max-time 30)",
+      "Bash(rm -f PlusJakartaSans-Bold.ttf)",
+      "Bash(file *.ttf)"
     ]
   }
 }

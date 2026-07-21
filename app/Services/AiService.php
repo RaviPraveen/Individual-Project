@@ -62,4 +62,42 @@ class AiService
             return null;
         }
     }
+
+    /**
+     * Text-to-image via the same router, a different task endpoint
+     * (/hf-inference/models/{model} rather than /v1/chat/completions).
+     * The response is raw image bytes, not JSON — the model bakes in
+     * unreliable/garbled text, so callers should ask for a text-free
+     * background and composite real price/title text on top themselves.
+     * Returns null under the same "AI unavailable" contract as generate().
+     */
+    public function generateImage(string $prompt): ?string
+    {
+        if (! $this->isConfigured()) {
+            return null;
+        }
+
+        try {
+            $model = config('services.huggingface.image_model');
+            $token = config('services.huggingface.key');
+
+            $response = Http::withToken($token)
+                ->timeout(60)
+                ->post("https://router.huggingface.co/hf-inference/models/{$model}", [
+                    'inputs' => $prompt,
+                ]);
+
+            if (! $response->successful() || ! str_starts_with($response->header('Content-Type', ''), 'image/')) {
+                Log::warning('Hugging Face image request failed', ['status' => $response->status()]);
+
+                return null;
+            }
+
+            return $response->body();
+        } catch (Throwable $e) {
+            Log::warning('Hugging Face image request threw an exception', ['message' => $e->getMessage()]);
+
+            return null;
+        }
+    }
 }
