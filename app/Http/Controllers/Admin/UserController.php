@@ -154,13 +154,12 @@ class UserController extends Controller
     public function resetPassword(Request $request, User $user): RedirectResponse
     {
         $request->validate([
-            'temp_password'                  => ['required', 'confirmed', Password::min(8)],
-            'temp_password_confirmation'     => ['required'],
+            'temp_password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
         $user->update([
-            'password'             => Hash::make($request->input('temp_password')),
-            'force_password_reset'  => true,
+            'password'            => Hash::make($request->input('temp_password')),
+            'force_password_reset' => true,
         ]);
 
         return redirect()->route('admin.users.index')

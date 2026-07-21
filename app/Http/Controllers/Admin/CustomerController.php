@@ -75,7 +75,7 @@ class CustomerController extends Controller
             ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
             ->where('sales.customer_id', $customer->id)
             ->selectRaw("COALESCE(categories.name, 'Uncategorized') as name, SUM(sale_items.quantity) as qty")
-            ->groupBy('name')
+            ->groupByRaw("COALESCE(categories.name, 'Uncategorized')")
             ->orderByDesc('qty')
             ->limit(3)
             ->get();

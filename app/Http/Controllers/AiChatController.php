@@ -292,7 +292,7 @@ class AiChatController extends Controller
             ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
             ->whereBetween('sales.created_at', [now()->startOfMonth(), now()->endOfMonth()])
             ->selectRaw("COALESCE(categories.name, 'Uncategorized') as name, SUM(sale_items.line_total) as revenue")
-            ->groupBy('name')
+            ->groupByRaw("COALESCE(categories.name, 'Uncategorized')")
             ->orderByDesc('revenue')
             ->limit(6)
             ->get();
