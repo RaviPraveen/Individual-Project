@@ -10,6 +10,7 @@ use App\Models\Sale;
 use App\Models\SaleReturn;
 use App\Models\Supplier;
 use App\Services\AiService;
+use App\Services\PromotionAnalytics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,7 @@ class DashboardController extends Controller
 {
     public function __construct(private AiService $gemini) {}
 
-    public function index(Request $request): View
+    public function index(Request $request, PromotionAnalytics $promotionAnalytics): View
     {
         $todaySales = Sale::whereDate('created_at', today());
         $monthSales = Sale::whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()]);
@@ -53,6 +54,7 @@ class DashboardController extends Controller
             'geminiConfigured' => $this->gemini->isConfigured(),
             'salesTrend' => $this->salesTrend(),
             'categoryBreakdown' => $this->categoryBreakdown(),
+            'promotions' => $promotionAnalytics->dashboardSummary(),
         ]);
     }
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ForecastController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\PromotionAnalyticsController;
 use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\PromotionPosterController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
@@ -77,6 +78,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             Route::get('/profit', [ReportController::class, 'profit'])->name('profit');
         });
 
+        Route::get('promotions-analytics', [PromotionAnalyticsController::class, 'index'])->name('promotions.analytics');
         Route::resource('promotions', PromotionController::class)->except('show');
         Route::post('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
         Route::post('promotions-bulk-action', [PromotionController::class, 'bulkAction'])->name('promotions.bulk-action');

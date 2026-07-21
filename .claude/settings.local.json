@@ -61,7 +61,11 @@
       "Bash(php -l app/Http/Controllers/Admin/PromotionPosterController.php)",
       "Bash(git check-ignore *)",
       "Bash(mkdir -p resources/fonts *)",
-      "Bash(php -l app/Http/Controllers/Cashier/CustomerDisplayController.php)"
+      "Bash(php -l app/Http/Controllers/Cashier/CustomerDisplayController.php)",
+      "Bash(php -l app/Services/PromotionAnalytics.php)",
+      "Bash(php -l app/Services/PromotionRecommendationService.php)",
+      "Bash(php -l app/Http/Controllers/Admin/PromotionAnalyticsController.php)",
+      "Bash(php -l app/Http/Controllers/Admin/DashboardController.php)"
     ]
   }
 }

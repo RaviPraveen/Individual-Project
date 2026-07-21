@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Promotion;
+use App\Services\PromotionRecommendationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,7 +13,7 @@ use Illuminate\View\View;
 
 class PromotionController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, PromotionRecommendationService $recommendations): View
     {
         Promotion::syncDueStatuses();
 
@@ -59,6 +60,7 @@ class PromotionController extends Controller
                 'expired' => Promotion::where('status', Promotion::STATUS_EXPIRED)->count(),
                 'featured' => Promotion::where('is_featured', true)->count(),
             ],
+            'recommendations' => $recommendations->recommendations($request->user()->id),
         ]);
     }
 

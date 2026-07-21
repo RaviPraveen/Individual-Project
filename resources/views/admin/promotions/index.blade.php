@@ -5,9 +5,33 @@
                 <h2 class="h3 mb-0 fw-extrabold text-dark"><i class="bi bi-megaphone text-primary me-2"></i>{{ __('Promotion Manager') }}</h2>
                 <div class="text-muted small">{{ __('Create, schedule, and manage promotional campaigns for the Customer Display.') }}</div>
             </div>
-            <a href="{{ route('admin.promotions.create') }}" class="btn btn-primary btn-sm rounded-pill px-3"><i class="bi bi-plus-lg"></i> {{ __('New Promotion') }}</a>
+            <div class="d-flex gap-2">
+                <a href="{{ route('admin.promotions.analytics') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3"><i class="bi bi-graph-up-arrow"></i> {{ __('Analytics') }}</a>
+                <a href="{{ route('admin.promotions.create') }}" class="btn btn-primary btn-sm rounded-pill px-3"><i class="bi bi-plus-lg"></i> {{ __('New Promotion') }}</a>
+            </div>
         </div>
     </x-slot>
+
+    @if (! empty($recommendations))
+        <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #EEF2FF 0%, #FFFFFF 100%); border: 1px solid #C7D2FE !important;">
+            <div class="card-header bg-transparent fw-bold text-primary border-bottom border-primary-subtle d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-stars me-1.5 text-gold"></i> {{ __('AI Suggestions') }}</span>
+                <span class="badge bg-primary-subtle text-primary rounded-pill small">{{ __('Auto Updated') }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @foreach ($recommendations as $rec)
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start gap-2 p-3 bg-white rounded-3 border h-100">
+                                <i class="bi {{ $rec['icon'] }} text-primary fs-5 flex-shrink-0"></i>
+                                <div class="small text-dark fw-medium">{{ $rec['text'] }}</div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
 
     <div class="row g-3 mb-4">
         <div class="col-6 col-lg-2">

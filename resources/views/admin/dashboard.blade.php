@@ -105,7 +105,7 @@
     </div>
 
     <!-- Secondary Counters -->
-    <div class="row g-3">
+    <div class="row g-3 mb-4">
         <div class="col-6 col-lg-3">
             <x-stat-card icon="bi-box-seam" tone="primary" :label="__('Active Products')" :value="$stats['products']" />
         </div>
@@ -117,6 +117,26 @@
         </div>
         <div class="col-6 col-lg-3">
             <x-stat-card icon="bi-arrow-return-left" tone="danger" :label="__('Refunds (Month)')" :value="'Rs '.number_format($stats['refunds_month_total'], 2)" />
+        </div>
+    </div>
+
+    <!-- Promotions Widgets -->
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <h3 class="h6 fw-bold text-dark mb-0"><i class="bi bi-megaphone text-primary me-1.5"></i>{{ __('Promotions') }}</h3>
+        <a href="{{ route('admin.promotions.index') }}" class="small fw-semibold text-decoration-none">{{ __('Open Promotion Manager') }} &rarr;</a>
+    </div>
+    <div class="row g-3">
+        <div class="col-6 col-lg-3">
+            <x-stat-card icon="bi-broadcast" tone="success" :label="__('Active Promotions')" :value="$promotions['active']" />
+        </div>
+        <div class="col-6 col-lg-3">
+            <x-stat-card icon="bi-clock-history" tone="info" :label="__('Scheduled Promotions')" :value="$promotions['scheduled']" />
+        </div>
+        <div class="col-6 col-lg-3">
+            <x-stat-card icon="bi-cash-stack" tone="warning" :label="__('Promotion Revenue (Month)')" :value="'Rs '.number_format($promotions['revenue_this_month'], 2)" />
+        </div>
+        <div class="col-6 col-lg-3">
+            <x-stat-card icon="bi-trophy" tone="primary" :label="__('Best Promotion')" :value="$promotions['best_promotion']->title ?? __('None yet')" />
         </div>
     </div>
 
