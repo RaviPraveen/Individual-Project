@@ -1,68 +1,88 @@
 <x-admin-layout>
     <x-slot name="header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2 class="h4 mb-0">{{ __('Products') }}</h2>
-            <a href="{{ route('admin.products.create') }}" class="btn btn-primary btn-sm">{{ __('Add Product') }}</a>
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
+            <div>
+                <h2 class="h3 mb-0 fw-extrabold text-dark"><i class="bi bi-box-seam text-primary me-2"></i>{{ __('Products Catalog') }}</h2>
+                <div class="text-muted small">{{ __('Manage your inventory, SKU pricing, barcodes, and stock levels.') }}</div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ route('admin.products.import.form') }}" class="btn btn-outline-primary rounded-pill px-4">
+                    <i class="bi bi-upload"></i> {{ __('Bulk Import') }}
+                </a>
+                <a href="{{ route('admin.products.create') }}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                    <i class="bi bi-plus-lg"></i> {{ __('Add New Product') }}
+                </a>
+            </div>
         </div>
     </x-slot>
 
-    <div class="card mb-3">
-        <div class="card-body">
-            <form method="GET" action="{{ route('admin.products.index') }}" class="row g-2 align-items-end">
+    <!-- Filter Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-3.5">
+            <form method="GET" action="{{ route('admin.products.index') }}" class="row g-3 align-items-end">
                 <div class="col-md-3">
-                    <x-input-label for="filter_name" :value="__('Name')" />
-                    <x-text-input id="filter_name" name="name" type="text" value="{{ request('name') }}" />
+                    <x-input-label for="filter_name" :value="__('Product Name')" />
+                    <x-text-input id="filter_name" name="name" type="text" value="{{ request('name') }}" placeholder="{{ __('Search name...') }}" />
                 </div>
                 <div class="col-md-3">
-                    <x-input-label for="filter_barcode" :value="__('Barcode')" />
-                    <x-text-input id="filter_barcode" name="barcode" type="text" value="{{ request('barcode') }}" />
+                    <x-input-label for="filter_barcode" :value="__('Barcode / SKU')" />
+                    <x-text-input id="filter_barcode" name="barcode" type="text" value="{{ request('barcode') }}" placeholder="{{ __('Scan or type barcode...') }}" />
                 </div>
                 <div class="col-md-3">
                     <x-input-label for="filter_category" :value="__('Category')" />
                     <select id="filter_category" name="category_id" class="form-select">
-                        <option value="">{{ __('All') }}</option>
+                        <option value="">{{ __('All Categories') }}</option>
                         @foreach ($categories as $category)
                             <option value="{{ $category->id }}" @selected(request('category_id') == $category->id)>{{ $category->name }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-secondary">{{ __('Filter') }}</button>
+                    <button type="submit" class="btn btn-primary fw-bold flex-grow-1"><i class="bi bi-funnel"></i> {{ __('Filter') }}</button>
                     <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary">{{ __('Reset') }}</a>
                 </div>
             </form>
         </div>
     </div>
 
-    <div class="card">
+    <!-- Products Table -->
+    <div class="card border-0 shadow-sm">
         <div class="table-responsive">
-            <table class="table table-bordered mb-0 align-middle">
-                <thead>
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
                     <tr>
-                        <th>{{ __('Name') }}</th>
+                        <th class="ps-4">{{ __('Product Name') }}</th>
                         <th>{{ __('SKU') }}</th>
                         <th>{{ __('Barcode') }}</th>
                         <th>{{ __('Category') }}</th>
-                        <th>{{ __('Cost') }}</th>
-                        <th>{{ __('Price') }}</th>
-                        <th>{{ __('Stock') }}</th>
+                        <th class="text-end">{{ __('Cost') }}</th>
+                        <th class="text-end">{{ __('Selling Price') }}</th>
+                        <th class="text-center">{{ __('Stock Level') }}</th>
                         <th>{{ __('Status') }}</th>
-                        <th class="text-end">{{ __('Actions') }}</th>
+                        <th class="pe-4 text-end">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($products as $product)
-                        <tr class="{{ $product->isLowStock() ? 'table-warning' : '' }}">
-                            <td>{{ $product->name }}</td>
-                            <td>{{ $product->sku }}</td>
-                            <td>{{ $product->barcode }}</td>
-                            <td>{{ $product->category?->name }}</td>
-                            <td>{{ number_format($product->cost_price, 2) }}</td>
-                            <td>{{ number_format($product->selling_price, 2) }}</td>
+                        <tr class="{{ $product->isLowStock() ? 'table-warning-subtle' : '' }}">
+                            <td class="ps-4 fw-bold text-dark">
+                                {{ $product->name }}
+                            </td>
+                            <td class="font-monospace small text-muted">{{ $product->sku }}</td>
+                            <td class="font-monospace small text-muted">{{ $product->barcode ?: '-' }}</td>
                             <td>
-                                {{ $product->stock_qty }} {{ $product->unit }}
+                                @if ($product->category)
+                                    <span class="badge bg-light text-dark border">{{ $product->category->name }}</span>
+                                @else
+                                    <span class="text-muted small">-</span>
+                                @endif
+                            </td>
+                            <td class="text-end font-monospace text-muted">Rs {{ number_format($product->cost_price, 2) }}</td>
+                            <td class="text-end font-monospace fw-bold text-primary">Rs {{ number_format($product->selling_price, 2) }}</td>
+                            <td class="text-center">
+                                <span class="fw-bold">{{ $product->stock_qty }}</span> <small class="text-muted">{{ $product->unit }}</small>
                                 @if ($product->isLowStock())
-                                    <span class="badge bg-warning text-dark">{{ __('Low') }}</span>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis ms-1">{{ __('Low Stock') }}</span>
                                 @endif
                             </td>
                             <td>
@@ -70,50 +90,60 @@
                                     {{ $product->is_active ? __('Active') : __('Inactive') }}
                                 </span>
                             </td>
-                            <td class="text-end">
-                                <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-outline-secondary btn-sm">{{ __('Edit') }}</a>
-                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#adjustStock{{ $product->id }}">
-                                    {{ __('Adjust Stock') }}
-                                </button>
-                                <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="d-inline" onsubmit="return confirm('{{ __('Delete this product?') }}');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">{{ __('Delete') }}</button>
-                                </form>
+                            <td class="pe-4 text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-outline-secondary" title="{{ __('Edit Product') }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#adjustStock{{ $product->id }}" title="{{ __('Adjust Stock') }}">
+                                        <i class="bi bi-sliders"></i>
+                                    </button>
+                                    <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="d-inline" onsubmit="return confirm('{{ __('Delete this product?') }}');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger" title="{{ __('Delete Product') }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
 
+                        <!-- Adjust Stock Modal -->
                         <x-modal :name="'adjustStock'.$product->id">
                             <form method="POST" action="{{ route('admin.products.adjust-stock', $product) }}">
                                 @csrf
-                                <div class="modal-header">
-                                    <h2 class="h5 mb-0">{{ __('Adjust Stock: ') }}{{ $product->name }}</h2>
+                                <div class="modal-header border-bottom">
+                                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-sliders text-primary me-2"></i>{{ __('Adjust Stock: ') }}{{ $product->name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
-                                <div class="modal-body">
-                                    <p class="text-muted small">{{ __('Current stock: ') }}{{ $product->stock_qty }} {{ $product->unit }}</p>
-
-                                    <div class="mb-3">
-                                        <x-input-label :for="'quantity'.$product->id" :value="__('Quantity change (use negative to reduce)')" />
-                                        <x-text-input :id="'quantity'.$product->id" name="quantity" type="number" required />
+                                <div class="modal-body p-4">
+                                    <div class="alert alert-light border small text-muted mb-3">
+                                        <i class="bi bi-info-circle text-primary me-1"></i> Current stock: <strong>{{ $product->stock_qty }} {{ $product->unit }}</strong>
                                     </div>
 
                                     <div class="mb-3">
-                                        <x-input-label :for="'reason'.$product->id" :value="__('Reason')" />
-                                        <x-text-input :id="'reason'.$product->id" name="reason" type="text" placeholder="e.g. damage, correction" required />
+                                        <x-input-label :for="'quantity'.$product->id" :value="__('Quantity Adjustment (use negative to decrease)')" />
+                                        <x-text-input :id="'quantity'.$product->id" name="quantity" type="number" required placeholder="e.g. 10 or -5" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <x-input-label :for="'reason'.$product->id" :value="__('Adjustment Reason')" />
+                                        <x-text-input :id="'reason'.$product->id" name="reason" type="text" placeholder="e.g. damaged stock, shipment correction..." required />
                                     </div>
                                 </div>
-                                <div class="modal-footer">
+                                <div class="modal-footer border-top bg-light">
                                     <x-secondary-button data-bs-dismiss="modal">{{ __('Cancel') }}</x-secondary-button>
-                                    <x-primary-button>{{ __('Apply') }}</x-primary-button>
+                                    <x-primary-button>{{ __('Apply Adjustment') }}</x-primary-button>
                                 </div>
                             </form>
                         </x-modal>
                     @empty
                         <tr>
                             <td colspan="9" class="p-0">
-                                <x-empty-state icon="bi-box-seam" :title="__('No products found')" :text="__('Try a different search, or add your first product.')">
+                                <x-empty-state icon="bi-box-seam" :title="__('No products found')" :text="__('Try adjusting your search criteria, or add your first product.')">
                                     <x-slot name="action">
-                                        <a href="{{ route('admin.products.create') }}" class="btn btn-primary btn-sm">{{ __('Add Product') }}</a>
+                                        <a href="{{ route('admin.products.create') }}" class="btn btn-primary rounded-pill px-4">{{ __('Add New Product') }}</a>
                                     </x-slot>
                                 </x-empty-state>
                             </td>
@@ -124,7 +154,7 @@
         </div>
     </div>
 
-    <div class="mt-3">
+    <div class="mt-4">
         {{ $products->links() }}
     </div>
 </x-admin-layout>

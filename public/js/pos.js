@@ -2,20 +2,44 @@
   'use strict';
 
   document.addEventListener('DOMContentLoaded', function () {
+    /* ---------- live browser local date & time ticker (with seconds) ---------- */
+    function updateLiveDateTime() {
+      var dateEl = document.getElementById('pos-live-date');
+      var clockEl = document.getElementById('pos-live-clock');
+      if (!dateEl && !clockEl) return;
+
+      var now = new Date();
+
+      if (dateEl) {
+        var dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        dateEl.textContent = new Intl.DateTimeFormat(navigator.language || 'en-US', dateOptions).format(now);
+      }
+
+      if (clockEl) {
+        var timeOptions = { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true };
+        clockEl.textContent = new Intl.DateTimeFormat(navigator.language || 'en-US', timeOptions).format(now);
+      }
+    }
+
+    updateLiveDateTime();
+    setInterval(updateLiveDateTime, 1000);
+
     /* ---------- toast bridge: turn session flash messages into toasts ---------- */
     var flashEl = document.getElementById('pos-flash-data');
-    if (flashEl && window.bootstrap) {
+    if (flashEl) {
       var success = flashEl.dataset.success;
       var error = flashEl.dataset.error;
-      if (success) showToast(success, 'success');
-      if (error) showToast(error, 'danger');
+      if (success && success !== 'null' && success !== '') showToast(success, 'success');
+      if (error && error !== 'null' && error !== '') showToast(error, 'danger');
     }
 
     /* ---------- staggered entrance for stat/quick-action cards ---------- */
-    var animated = document.querySelectorAll('.pos-stat-card, .quick-action');
+    var animated = document.querySelectorAll('.pos-stat-card, .quick-action, .card');
     animated.forEach(function (el, i) {
-      el.classList.add('pos-animate-in');
-      el.style.animationDelay = (i * 40) + 'ms';
+      if (!el.classList.contains('pos-animate-in')) {
+        el.classList.add('pos-animate-in');
+        el.style.animationDelay = Math.min(i * 30, 300) + 'ms';
+      }
     });
 
     /* ---------- sidebar toggle (mobile) ---------- */
@@ -31,9 +55,25 @@
         }
       });
     }
+
+    /* ---------- SweetAlert2 global alert override helper ---------- */
+    if (window.Swal) {
+      window.posAlert = function(title, text, icon) {
+        return Swal.fire({
+          title: title || '',
+          text: text || '',
+          icon: icon || 'info',
+          confirmButtonColor: '#5B5CEB',
+          customClass: {
+            popup: 'rounded-4 shadow-lg',
+            confirmButton: 'btn btn-primary px-4'
+          }
+        });
+      };
+    }
   });
 
-  /* ---------- toast helper, reusable for JS-triggered notices too ---------- */
+  /* ---------- toast helper, reusable for JS-triggered notices ---------- */
   var TOAST_ICONS = {
     success: 'bi-check-circle-fill',
     danger: 'bi-x-circle-fill',
@@ -52,24 +92,26 @@
     wrapper.innerHTML =
       '<div class="d-flex">' +
         '<div class="toast-accent"></div>' +
-        '<div class="d-flex align-items-center gap-2 px-3 py-2 flex-grow-1">' +
-          '<i class="bi ' + (TOAST_ICONS[type] || TOAST_ICONS.info) + ' text-' + type + '"></i>' +
-          '<div class="toast-body p-0 small">' + message + '</div>' +
+        '<div class="d-flex align-items-center gap-2 px-3 py-2.5 flex-grow-1">' +
+          '<i class="bi ' + (TOAST_ICONS[type] || TOAST_ICONS.info) + ' text-' + type + ' fs-5"></i>' +
+          '<div class="toast-body p-0 fw-semibold text-dark">' + message + '</div>' +
           '<button type="button" class="btn-close ms-auto" data-bs-dismiss="toast"></button>' +
         '</div>' +
       '</div>' +
       '<div class="toast-progress text-' + type + '"></div>';
 
     container.appendChild(wrapper);
-    var toast = new bootstrap.Toast(wrapper, { delay: 4500 });
+    if (window.bootstrap) {
+      var toast = new bootstrap.Toast(wrapper, { delay: 4500 });
 
-    var progress = wrapper.querySelector('.toast-progress');
-    progress.style.transition = 'width 4500ms linear';
-    progress.style.width = '100%';
-    requestAnimationFrame(function () { progress.style.width = '0%'; });
+      var progress = wrapper.querySelector('.toast-progress');
+      progress.style.transition = 'width 4500ms linear';
+      progress.style.width = '100%';
+      requestAnimationFrame(function () { progress.style.width = '0%'; });
 
-    wrapper.addEventListener('hidden.bs.toast', function () { wrapper.remove(); });
-    toast.show();
+      wrapper.addEventListener('hidden.bs.toast', function () { wrapper.remove(); });
+      toast.show();
+    }
   }
 
   window.posToast = showToast;

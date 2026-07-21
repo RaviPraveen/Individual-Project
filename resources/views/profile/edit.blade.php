@@ -1,7 +1,3 @@
-@php
-    $layout = auth()->user()->isAdmin() ? 'x-admin-layout' : 'x-cashier-layout';
-@endphp
-
 <x-dynamic-component :component="auth()->user()->isAdmin() ? 'admin-layout' : 'cashier-layout'">
     <x-slot name="header">
         <h2 class="h4 mb-0">{{ __('My Profile') }}</h2>

@@ -31,7 +31,14 @@
       "Bash(powershell -Command \"Get-Process -Name php -ErrorAction SilentlyContinue | Select-Object Id,ProcessName\")",
       "Bash(powershell -Command \"Stop-Process -Id 2916 -Force -ErrorAction SilentlyContinue; Stop-Process -Id 14376 -Force -ErrorAction SilentlyContinue\")",
       "Skill(artifact-design)",
-      "Skill(artifact-design:*)"
+      "Skill(artifact-design:*)",
+      "Bash(php -l app/Providers/AppServiceProvider.php)",
+      "Bash(php -l app/Services/NotificationGenerator.php)",
+      "Bash(php -l app/Http/Controllers/Admin/NotificationController.php)",
+      "Bash(powershell -Command \"Get-Process mysqld -ErrorAction SilentlyContinue\")",
+      "Bash(powershell -Command \"Start-Process 'C:\\\\xampp\\\\mysql\\\\bin\\\\mysqld.exe' -ArgumentList '--defaults-file=C:\\\\xampp\\\\mysql\\\\bin\\\\my.ini' -WindowStyle Hidden\")",
+      "Bash(git status *)",
+      "Bash(git add *)"
     ]
   }
 }

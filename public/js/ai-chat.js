@@ -8,6 +8,7 @@
     const sidebar = document.getElementById('ai-chat-sidebar');
     const sidebarToggle = document.getElementById('ai-sidebar-toggle');
     const historyList = document.getElementById('ai-chat-history');
+    const searchInput = document.getElementById('ai-search-chats');
     const messagesArea = document.getElementById('ai-chat-messages');
     const messagesList = document.getElementById('ai-messages-list');
     const emptyState = document.getElementById('ai-chat-empty');
@@ -17,6 +18,7 @@
     const newChatBtn = document.getElementById('ai-new-chat-btn');
     const newChatBtn2 = document.getElementById('ai-new-chat-btn-2');
     const clearChatBtn = document.getElementById('ai-clear-chat-btn');
+    const jumpBottomBtn = document.getElementById('ai-jump-bottom-btn');
 
     let activeConversationId = config.activeConversationId;
     let chartCounter = 0;
@@ -33,7 +35,7 @@
 
     function escapeHtml(str) {
       const div = document.createElement('div');
-      div.textContent = str;
+      div.textContent = str || '';
       return div.innerHTML;
     }
 
@@ -57,47 +59,74 @@
       }, options)).then(r => r.json().then(data => ({ ok: r.ok, data })));
     }
 
-    /* ---------- widgets ---------- */
+    /* ---------- Scroll & Jump to Bottom Button ---------- */
+    messagesArea.addEventListener('scroll', () => {
+      const isScrolledUp = messagesArea.scrollHeight - messagesArea.scrollTop - messagesArea.clientHeight > 150;
+      if (jumpBottomBtn) {
+        jumpBottomBtn.classList.toggle('d-none', !isScrolledUp);
+      }
+    });
+
+    if (jumpBottomBtn) {
+      jumpBottomBtn.addEventListener('click', scrollToBottom);
+    }
+
+    /* ---------- Search History Filter ---------- */
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        historyList.querySelectorAll('.ai-history-item').forEach(item => {
+          const title = item.querySelector('.ai-history-title')?.textContent.toLowerCase() || '';
+          item.style.display = title.includes(query) ? 'flex' : 'none';
+        });
+      });
+    }
+
+    /* ---------- widgets & cards ---------- */
     function renderWidget(widget) {
       if (!widget) return null;
 
       const wrap = document.createElement('div');
-      wrap.className = 'ai-widget';
+      wrap.className = 'ai-widget mt-3';
 
       if (widget.type === 'stats') {
         const grid = document.createElement('div');
-        grid.className = 'ai-widget-stats';
+        grid.className = 'row g-2';
         widget.items.forEach(item => {
-          const card = document.createElement('div');
-          card.className = 'ai-widget-stat-card';
-          card.innerHTML = `
-            <div class="icon-badge bg-${item.tone}-subtle text-${item.tone} mx-auto"><i class="bi ${item.icon}"></i></div>
-            <div class="label">${escapeHtml(item.label)}</div>
-            <div class="value num-tabular">${escapeHtml(item.value)}</div>
+          const col = document.createElement('div');
+          col.className = 'col-6 col-md-3';
+          col.innerHTML = `
+            <div class="card border-0 bg-white shadow-xs p-3 text-center rounded-3">
+              <div class="small text-muted fw-bold text-uppercase" style="font-size:0.68rem;">${escapeHtml(item.label)}</div>
+              <div class="fs-5 fw-extrabold text-primary num-tabular mt-0.5">${escapeHtml(item.value)}</div>
+            </div>
           `;
-          grid.appendChild(card);
+          grid.appendChild(col);
         });
         wrap.appendChild(grid);
         return wrap;
       }
 
       if (widget.type === 'chart') {
+        const card = document.createElement('div');
+        card.className = 'card border-0 shadow-sm p-3 bg-white rounded-3 mt-2';
         if (widget.title) {
           const title = document.createElement('div');
-          title.className = 'ai-widget-title';
+          title.className = 'fw-bold text-dark mb-2 small';
           title.textContent = widget.title;
-          wrap.appendChild(title);
+          card.appendChild(title);
         }
         const chartWrap = document.createElement('div');
-        chartWrap.className = 'ai-widget-chart-wrap';
+        chartWrap.style.height = '220px';
         const canvas = document.createElement('canvas');
         canvas.id = `ai-widget-chart-${++chartCounter}`;
         chartWrap.appendChild(canvas);
-        wrap.appendChild(chartWrap);
+        card.appendChild(chartWrap);
+        wrap.appendChild(card);
 
         requestAnimationFrame(() => {
           if (!window.Chart) return;
-          const colors = ['#146C43', '#B8862E', '#2563A8', '#C23B3B', '#66716B', '#8F6822'];
+          const colors = ['#5B5CEB', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6'];
           new Chart(canvas, {
             type: widget.chart_type || 'bar',
             data: {
@@ -105,8 +134,8 @@
               datasets: [{
                 label: widget.title || 'Value',
                 data: widget.data,
-                backgroundColor: widget.chart_type === 'pie' ? colors : 'rgba(20, 108, 67, 0.55)',
-                borderColor: widget.chart_type === 'line' ? '#146C43' : colors,
+                backgroundColor: widget.chart_type === 'pie' ? colors : 'rgba(91, 92, 235, 0.55)',
+                borderColor: widget.chart_type === 'line' ? '#5B5CEB' : colors,
                 borderWidth: widget.chart_type === 'pie' ? 2 : 1,
                 fill: widget.chart_type === 'line',
                 tension: 0.35,
@@ -124,30 +153,30 @@
 
       if (widget.type === 'products') {
         return renderTableWidget(wrap, widget, ['Product', 'SKU', 'Stock', 'Reorder Level', 'Price', 'Status'], row => `
-          <td><i class="bi bi-box-seam me-1 text-muted"></i>${escapeHtml(row.name)}</td>
-          <td>${escapeHtml(row.sku)}</td>
-          <td>${row.stock}</td>
-          <td>${row.reorder_level}</td>
-          <td>${escapeHtml(row.price)}</td>
-          <td><span class="badge text-bg-${row.status_tone}">${escapeHtml(row.status)}</span></td>
+          <td class="fw-bold text-dark"><i class="bi bi-box-seam me-1 text-primary"></i>${escapeHtml(row.name)}</td>
+          <td class="font-monospace small text-muted">${escapeHtml(row.sku)}</td>
+          <td class="fw-semibold">${row.stock}</td>
+          <td class="text-muted">${row.reorder_level}</td>
+          <td class="fw-bold text-primary">${escapeHtml(row.price)}</td>
+          <td><span class="badge bg-${row.status_tone}-subtle text-${row.status_tone}">${escapeHtml(row.status)}</span></td>
         `);
       }
 
       if (widget.type === 'purchase_orders') {
         return renderTableWidget(wrap, widget, ['Supplier', 'Order Date', 'Total', 'Status'], row => `
-          <td>${escapeHtml(row.supplier)}</td>
-          <td>${escapeHtml(row.order_date)}</td>
-          <td>${escapeHtml(row.total)}</td>
-          <td><span class="badge text-bg-warning">${escapeHtml(row.status)}</span></td>
+          <td class="fw-bold text-dark">${escapeHtml(row.supplier)}</td>
+          <td class="text-muted small">${escapeHtml(row.order_date)}</td>
+          <td class="fw-bold text-primary">${escapeHtml(row.total)}</td>
+          <td><span class="badge bg-warning-subtle text-warning-emphasis">${escapeHtml(row.status)}</span></td>
         `);
       }
 
       if (widget.type === 'customers') {
         return renderTableWidget(wrap, widget, ['Name', 'Phone', 'Total Spent', 'Points'], row => `
-          <td>${escapeHtml(row.name)}</td>
-          <td>${escapeHtml(row.phone || '—')}</td>
-          <td>${escapeHtml(row.total_spent)}</td>
-          <td><i class="bi bi-star-fill text-gold"></i> ${row.points_balance}</td>
+          <td class="fw-bold text-dark">${escapeHtml(row.name)}</td>
+          <td class="text-muted small">${escapeHtml(row.phone || '—')}</td>
+          <td class="fw-bold text-primary">${escapeHtml(row.total_spent)}</td>
+          <td><span class="badge bg-gold-subtle"><i class="bi bi-star-fill text-gold me-1"></i> ${row.points_balance}</span></td>
         `);
       }
 
@@ -157,22 +186,26 @@
     function renderTableWidget(wrap, widget, columns, rowHtml) {
       if (widget.rows.length === 0) return null;
 
+      const card = document.createElement('div');
+      card.className = 'card border-0 shadow-sm rounded-3 overflow-hidden mt-2';
+
       if (widget.title) {
         const title = document.createElement('div');
-        title.className = 'ai-widget-title';
+        title.className = 'card-header bg-white fw-bold text-dark border-bottom py-2.5 px-3 small';
         title.textContent = widget.title;
-        wrap.appendChild(title);
+        card.appendChild(title);
       }
 
       const tableWrap = document.createElement('div');
-      tableWrap.className = 'ai-widget-table-wrap table-responsive';
+      tableWrap.className = 'table-responsive';
       tableWrap.innerHTML = `
-        <table class="table mb-0">
-          <thead><tr>${columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr></thead>
+        <table class="table table-hover align-middle mb-0 small">
+          <thead class="bg-light"><tr>${columns.map(c => `<th class="py-2">${escapeHtml(c)}</th>`).join('')}</tr></thead>
           <tbody>${widget.rows.map(row => `<tr>${rowHtml(row)}</tr>`).join('')}</tbody>
         </table>
       `;
-      wrap.appendChild(tableWrap);
+      card.appendChild(tableWrap);
+      wrap.appendChild(card);
       return wrap;
     }
 
@@ -195,16 +228,16 @@
       aiRow.dataset.logId = message.id;
       aiRow.dataset.query = message.query;
       aiRow.innerHTML = `
-        <div class="ai-avatar assistant">🤖</div>
+        <div class="ai-avatar assistant">✨</div>
         <div class="ai-bubble-col">
           <div class="ai-bubble assistant"></div>
           <div class="ai-message-meta">
             <span>${escapeHtml(message.created_at)}</span>
             <div class="ai-message-actions">
-              <button type="button" class="ai-msg-action-btn ai-copy-btn" title="Copy"><i class="bi bi-clipboard"></i></button>
+              <button type="button" class="ai-msg-action-btn ai-copy-btn" title="Copy text"><i class="bi bi-clipboard"></i></button>
               <button type="button" class="ai-msg-action-btn ai-regenerate-btn" title="Regenerate"><i class="bi bi-arrow-repeat"></i></button>
-              <button type="button" class="ai-msg-action-btn ai-like-btn" title="Like"><i class="bi bi-hand-thumbs-up"></i></button>
-              <button type="button" class="ai-msg-action-btn ai-dislike-btn" title="Dislike"><i class="bi bi-hand-thumbs-down"></i></button>
+              <button type="button" class="ai-msg-action-btn ai-like-btn" title="Helpful"><i class="bi bi-hand-thumbs-up"></i></button>
+              <button type="button" class="ai-msg-action-btn ai-dislike-btn" title="Not helpful"><i class="bi bi-hand-thumbs-down"></i></button>
             </div>
           </div>
         </div>
@@ -223,32 +256,44 @@
     }
 
     function applyFeedbackState(row, feedback) {
-      row.querySelector('.ai-like-btn').classList.toggle('active', feedback === 'like');
-      row.querySelector('.ai-like-btn').classList.toggle('like', feedback === 'like');
-      row.querySelector('.ai-dislike-btn').classList.toggle('active', feedback === 'dislike');
-      row.querySelector('.ai-dislike-btn').classList.toggle('dislike', feedback === 'dislike');
+      const likeBtn = row.querySelector('.ai-like-btn');
+      const dislikeBtn = row.querySelector('.ai-dislike-btn');
+      if (likeBtn) likeBtn.classList.toggle('text-primary', feedback === 'like');
+      if (dislikeBtn) dislikeBtn.classList.toggle('text-danger', feedback === 'dislike');
     }
 
     function wireMessageActions(row, message) {
-      row.querySelector('.ai-copy-btn').addEventListener('click', () => {
-        navigator.clipboard?.writeText(message.response).then(() => {
-          window.posToast && window.posToast('Copied to clipboard.', 'success');
+      const copyBtn = row.querySelector('.ai-copy-btn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard?.writeText(message.response).then(() => {
+            window.posToast && window.posToast('Response copied to clipboard.', 'success');
+          });
         });
-      });
+      }
 
-      row.querySelector('.ai-regenerate-btn').addEventListener('click', () => {
-        sendMessage(row.dataset.query, true);
-      });
+      const regenBtn = row.querySelector('.ai-regenerate-btn');
+      if (regenBtn) {
+        regenBtn.addEventListener('click', () => {
+          sendMessage(row.dataset.query, true);
+        });
+      }
 
-      row.querySelector('.ai-like-btn').addEventListener('click', () => {
-        const isActive = row.querySelector('.ai-like-btn').classList.contains('active');
-        setFeedback(row, message.id, isActive ? null : 'like');
-      });
+      const likeBtn = row.querySelector('.ai-like-btn');
+      if (likeBtn) {
+        likeBtn.addEventListener('click', () => {
+          const isActive = likeBtn.classList.contains('text-primary');
+          setFeedback(row, message.id, isActive ? null : 'like');
+        });
+      }
 
-      row.querySelector('.ai-dislike-btn').addEventListener('click', () => {
-        const isActive = row.querySelector('.ai-dislike-btn').classList.contains('active');
-        setFeedback(row, message.id, isActive ? null : 'dislike');
-      });
+      const dislikeBtn = row.querySelector('.ai-dislike-btn');
+      if (dislikeBtn) {
+        dislikeBtn.addEventListener('click', () => {
+          const isActive = dislikeBtn.classList.contains('text-danger');
+          setFeedback(row, message.id, isActive ? null : 'dislike');
+        });
+      }
     }
 
     function setFeedback(row, logId, feedback) {
@@ -265,9 +310,14 @@
       row.className = 'ai-message-row assistant';
       row.id = 'ai-typing-row';
       row.innerHTML = `
-        <div class="ai-avatar assistant">🤖</div>
+        <div class="ai-avatar assistant">✨</div>
         <div class="ai-bubble-col">
-          <div class="ai-bubble assistant"><span class="ai-typing-dots"><span></span><span></span><span></span></span></div>
+          <div class="ai-bubble assistant">
+            <div class="d-flex align-items-center gap-2 text-muted small">
+              <span class="ai-typing-dots"><span></span><span></span><span></span></span>
+              <span>Thinking & analyzing store metrics...</span>
+            </div>
+          </div>
         </div>
       `;
       messagesList.appendChild(row);
@@ -332,7 +382,7 @@
 
     textarea.addEventListener('input', () => {
       textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 160) + 'px';
+      textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
       sendBtn.disabled = textarea.value.trim().length === 0;
     });
 
@@ -345,12 +395,12 @@
       }
     });
 
-    /* ---------- suggestion chips ---------- */
-    document.querySelectorAll('.ai-chip').forEach(chip => {
-      chip.addEventListener('click', () => sendMessage(chip.dataset.text));
+    /* ---------- suggestion prompt cards ---------- */
+    document.querySelectorAll('.ai-suggestion-card').forEach(card => {
+      card.addEventListener('click', () => sendMessage(card.dataset.text));
     });
 
-    /* ---------- sidebar: conversation switching ---------- */
+    /* ---------- sidebar history switching ---------- */
     function setActiveSidebarItem(id) {
       historyList.querySelectorAll('.ai-history-item').forEach(item => {
         item.classList.toggle('active', String(item.dataset.id) === String(id));
@@ -428,7 +478,7 @@
     }
 
     function deleteConversation(item, id) {
-      if (!confirm('Delete this conversation? This cannot be undone.')) return;
+      if (!confirm('Delete this conversation? This action cannot be undone.')) return;
 
       fetchJson(urlFor(config.deleteUrlTemplate, id), { method: 'DELETE' }).then(({ ok }) => {
         if (!ok) return;
@@ -451,7 +501,7 @@
         return;
       }
 
-      let todayLabel = Array.from(historyList.querySelectorAll('.ai-history-group-label')).find(el => el.textContent === 'Today');
+      let todayLabel = Array.from(historyList.querySelectorAll('.ai-history-group-label')).find(el => el.textContent.includes('Today'));
       if (!todayLabel) {
         todayLabel = document.createElement('div');
         todayLabel.className = 'ai-history-group-label';
@@ -492,7 +542,7 @@
     }
 
     newChatBtn.addEventListener('click', startNewChat);
-    newChatBtn2.addEventListener('click', startNewChat);
+    if (newChatBtn2) newChatBtn2.addEventListener('click', startNewChat);
 
     clearChatBtn.addEventListener('click', () => {
       if (!activeConversationId) {
