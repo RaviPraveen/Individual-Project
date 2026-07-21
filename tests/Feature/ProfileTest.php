@@ -61,39 +61,27 @@ class ProfileTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
-    public function test_user_can_delete_their_account(): void
+    // Self-service account deletion was deliberately removed: this system
+    // manages staff accounts centrally through admin-only User Management
+    // (create/edit/deactivate/delete), not self-deletion — see UserTest.php
+    // for the account-lifecycle coverage that replaces it.
+
+    public function test_user_can_update_their_own_password(): void
     {
         $user = User::factory()->create();
 
         $response = $this
             ->actingAs($user)
-            ->delete('/profile', [
-                'password' => 'password',
+            ->patch('/profile/password', [
+                'current_password' => 'password',
+                'password' => 'new-password-123',
+                'password_confirmation' => 'new-password-123',
             ]);
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/');
-
-        $this->assertGuest();
-        $this->assertNull($user->fresh());
-    }
-
-    public function test_correct_password_must_be_provided_to_delete_account(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this
-            ->actingAs($user)
-            ->from('/profile')
-            ->delete('/profile', [
-                'password' => 'wrong-password',
-            ]);
-
-        $response
-            ->assertSessionHasErrorsIn('userDeletion', 'password')
             ->assertRedirect('/profile');
 
-        $this->assertNotNull($user->fresh());
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('new-password-123', $user->fresh()->password));
     }
 }
