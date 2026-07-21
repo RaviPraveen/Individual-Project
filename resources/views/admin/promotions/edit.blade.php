@@ -40,7 +40,7 @@
                             <div class="text-muted text-center p-4" id="poster-preview-empty"><i class="bi bi-magic fs-1 d-block mb-2"></i>{{ __('Generate a poster to preview it here') }}</div>
                         @endif
                     </div>
-                    <div id="poster-preview-note" class="small text-muted mt-2 {{ $promotion->pending_poster_used_ai ? 'd-none' : '' }}">
+                    <div id="poster-preview-note" class="small text-muted mt-2 {{ ($promotion->pending_poster_path && ! $promotion->pending_poster_used_ai) ? '' : 'd-none' }}">
                         {{ __('AI image service was unavailable for the last attempt — this is a placeholder background. Try Generate Again, or Approve it anyway.') }}
                     </div>
 
