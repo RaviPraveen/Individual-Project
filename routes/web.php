@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\ReceiptSettingController;
 use App\Http\Controllers\Admin\ReorderController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\Cashier\BillingController;
 use App\Http\Controllers\Cashier\CustomerDisplayController;
@@ -86,6 +87,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             Route::get('/', [BillingSettingController::class, 'edit'])->name('edit');
             Route::put('/', [BillingSettingController::class, 'update'])->name('update');
         });
+
+        // User Management (admin only)
+        Route::resource('users', UserController::class)->except('show');
+        Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
     });
 
 Route::middleware(['auth', 'verified', 'role:admin,cashier'])->group(function () {
@@ -129,7 +134,7 @@ Route::middleware(['auth', 'verified', 'role:cashier'])
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 });
 
 require __DIR__.'/auth.php';

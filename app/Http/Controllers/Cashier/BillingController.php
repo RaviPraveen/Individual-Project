@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\ReceiptSetting;
 use App\Models\Sale;
 use App\Models\StockMovement;
+use App\Services\ActivityLogger;
 use App\Services\AiService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -208,6 +209,13 @@ class BillingController extends Controller
         }
 
         $sale->load('items.product', 'customer');
+
+        app(ActivityLogger::class)->log(
+            'sale.created',
+            "Sale {$sale->invoice_no} completed for Rs {$sale->total}",
+            $sale,
+            $request->user()->id
+        );
 
         if ($sale->customer?->email) {
             try {

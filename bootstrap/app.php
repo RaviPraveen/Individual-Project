@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\RedirectIfPasswordResetRequired;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,8 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => EnsureUserHasRole::class,
+            'role'                 => EnsureUserHasRole::class,
+            'force.password.reset' => RedirectIfPasswordResetRequired::class,
         ]);
+
+        // Apply the force-password-reset redirect to all authenticated web requests
+        $middleware->appendToGroup('web', RedirectIfPasswordResetRequired::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

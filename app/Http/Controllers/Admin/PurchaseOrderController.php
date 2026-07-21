@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ActivityLog;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\StockMovement;
 use App\Models\Supplier;
+use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +16,8 @@ use RuntimeException;
 
 class PurchaseOrderController extends Controller
 {
+    public function __construct(private ActivityLogger $activityLogger) {}
+
     public function index(): View
     {
         $purchaseOrders = PurchaseOrder::with('supplier')
@@ -84,40 +86,69 @@ class PurchaseOrderController extends Controller
         return view('admin.purchase-orders.show', compact('purchaseOrder'));
     }
 
+    /**
+     * Locks the purchase order row (and re-checks its status inside the
+     * transaction) so two concurrent "mark received" clicks on the same PO
+     * can't both pass the pending-status check and double-restock it. The
+     * product rows are locked too before incrementing, so a receive can't
+     * read stale stock alongside a concurrent sale/return/other receipt on
+     * the same product.
+     */
     public function markReceived(Request $request, PurchaseOrder $purchaseOrder): RedirectResponse
     {
-        if ($purchaseOrder->status !== 'pending') {
-            return redirect()->route('admin.purchase-orders.show', $purchaseOrder)
-                ->with('error', 'Only pending purchase orders can be marked received.');
+        try {
+            DB::transaction(function () use ($purchaseOrder, $request) {
+                $locked = PurchaseOrder::where('id', $purchaseOrder->id)->lockForUpdate()->firstOrFail();
+
+                if ($locked->status !== 'pending') {
+                    throw new RuntimeException('Only pending purchase orders can be marked received.');
+                }
+
+                $items = $locked->items()->get();
+                $lockedProducts = Product::whereIn('id', $items->pluck('product_id'))->lockForUpdate()->get()->keyBy('id');
+
+                foreach ($items as $item) {
+                    $lockedProducts->get($item->product_id)?->increment('stock_qty', $item->quantity);
+
+                    StockMovement::create([
+                        'product_id' => $item->product_id,
+                        'type' => 'in',
+                        'quantity' => $item->quantity,
+                        'reason' => 'purchase',
+                        'recorded_by' => $request->user()->id,
+                    ]);
+                }
+
+                $locked->update(['status' => 'received']);
+            });
+        } catch (RuntimeException $e) {
+            return redirect()->route('admin.purchase-orders.show', $purchaseOrder)->with('error', $e->getMessage());
         }
 
-        DB::transaction(function () use ($purchaseOrder, $request) {
-            foreach ($purchaseOrder->items()->with('product')->get() as $item) {
-                $item->product->increment('stock_qty', $item->quantity);
-
-                StockMovement::create([
-                    'product_id' => $item->product_id,
-                    'type' => 'in',
-                    'quantity' => $item->quantity,
-                    'reason' => 'purchase',
-                    'recorded_by' => $request->user()->id,
-                ]);
-            }
-
-            $purchaseOrder->update(['status' => 'received']);
-        });
+        $this->activityLogger->log(
+            'purchase_order.received',
+            "Marked purchase order #{$purchaseOrder->id} as received",
+            $purchaseOrder
+        );
 
         return redirect()->route('admin.purchase-orders.show', $purchaseOrder)->with('success', 'Purchase order marked received and stock updated.');
     }
 
     public function cancel(PurchaseOrder $purchaseOrder): RedirectResponse
     {
-        if ($purchaseOrder->status !== 'pending') {
-            return redirect()->route('admin.purchase-orders.show', $purchaseOrder)
-                ->with('error', 'Only pending purchase orders can be cancelled.');
-        }
+        try {
+            DB::transaction(function () use ($purchaseOrder) {
+                $locked = PurchaseOrder::where('id', $purchaseOrder->id)->lockForUpdate()->firstOrFail();
 
-        $purchaseOrder->update(['status' => 'cancelled']);
+                if ($locked->status !== 'pending') {
+                    throw new RuntimeException('Only pending purchase orders can be cancelled.');
+                }
+
+                $locked->update(['status' => 'cancelled']);
+            });
+        } catch (RuntimeException $e) {
+            return redirect()->route('admin.purchase-orders.show', $purchaseOrder)->with('error', $e->getMessage());
+        }
 
         return redirect()->route('admin.purchase-orders.show', $purchaseOrder)->with('success', 'Purchase order cancelled.');
     }
