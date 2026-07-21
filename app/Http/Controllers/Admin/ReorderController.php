@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AiLog;
 use App\Models\Supplier;
-use App\Services\ForecastService;
 use App\Services\AiService;
+use App\Services\ForecastService;
+use App\Services\ProductSupplierResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ReorderController extends Controller
@@ -17,6 +17,7 @@ class ReorderController extends Controller
     public function __construct(
         private ForecastService $forecastService,
         private AiService $gemini,
+        private ProductSupplierResolver $supplierResolver,
     ) {}
 
     public function index(Request $request): View
@@ -26,7 +27,7 @@ class ReorderController extends Controller
             ->sortBy('projected_stock_30d')
             ->values();
 
-        $usualSuppliers = $this->usualSuppliers($suggestions->pluck('product.id')->all());
+        $usualSuppliers = $this->supplierResolver->resolve($suggestions->pluck('product.id')->all());
 
         $suggestions = $suggestions->map(function ($f) use ($usualSuppliers) {
             $f['usual_supplier'] = $usualSuppliers[$f['product']->id] ?? null;
@@ -40,36 +41,6 @@ class ReorderController extends Controller
             'narrative' => $this->narrative($request, $suggestions),
             'geminiConfigured' => $this->gemini->isConfigured(),
         ]);
-    }
-
-    /**
-     * The most recent supplier a product was ordered from, based on past
-     * purchase order history. Informational only — the admin still chooses
-     * which supplier to draft a new order against.
-     */
-    private function usualSuppliers(array $productIds): array
-    {
-        if (empty($productIds)) {
-            return [];
-        }
-
-        $rows = DB::table('purchase_order_items')
-            ->join('purchase_orders', 'purchase_orders.id', '=', 'purchase_order_items.purchase_order_id')
-            ->join('suppliers', 'suppliers.id', '=', 'purchase_orders.supplier_id')
-            ->whereIn('purchase_order_items.product_id', $productIds)
-            ->orderByDesc('purchase_orders.order_date')
-            ->orderByDesc('purchase_orders.id')
-            ->get(['purchase_order_items.product_id', 'suppliers.id as supplier_id', 'suppliers.name as supplier_name']);
-
-        $result = [];
-
-        foreach ($rows as $row) {
-            if (! isset($result[$row->product_id])) {
-                $result[$row->product_id] = ['id' => $row->supplier_id, 'name' => $row->supplier_name];
-            }
-        }
-
-        return $result;
     }
 
     /**
