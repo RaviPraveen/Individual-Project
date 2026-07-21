@@ -161,6 +161,8 @@ Route::middleware(['auth', 'verified', 'role:cashier'])
         Route::get('/display', [CustomerDisplayController::class, 'show'])->name('display.show');
         Route::get('/display/data', [CustomerDisplayController::class, 'data'])->name('display.data');
         Route::post('/display/sync', [CustomerDisplayController::class, 'sync'])->name('display.sync');
+        Route::get('/display/promotions', [CustomerDisplayController::class, 'promotions'])->name('display.promotions');
+        Route::post('/display/promotions/{promotion}/viewed', [CustomerDisplayController::class, 'markPromotionViewed'])->name('display.promotions.viewed');
 
         Route::get('/ai-chat', [AiChatController::class, 'index'])->name('ai-chat.index');
         Route::post('/ai-chat', [AiChatController::class, 'ask'])->name('ai-chat.ask');

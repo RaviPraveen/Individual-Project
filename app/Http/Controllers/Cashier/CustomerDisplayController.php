@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Cashier;
 
 use App\Http\Controllers\Controller;
+use App\Models\Promotion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class CustomerDisplayController extends Controller
@@ -49,6 +51,45 @@ class CustomerDisplayController extends Controller
             array_merge($validated, ['status' => $status]),
             self::TTL_ACTIVE
         );
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * The right-panel rotation feed. Ordering (priority, then featured
+     * first) is a tie-break for promotions with equal claim to airtime —
+     * the actual "featured shows more often" behavior is achieved
+     * client-side by repeating featured entries in the rotation playlist,
+     * since JSON ordering alone can't express repetition.
+     */
+    public function promotions(): JsonResponse
+    {
+        Promotion::syncDueStatuses();
+
+        $promotions = Promotion::visibleOnDisplay('customer_display')
+            ->orderByRaw("CASE priority WHEN 'high' THEN 1 WHEN 'normal' THEN 2 WHEN 'low' THEN 3 ELSE 4 END")
+            ->orderByDesc('is_featured')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json([
+            'promotions' => $promotions->map(fn (Promotion $p) => [
+                'id' => $p->id,
+                'title' => $p->title,
+                'description' => $p->description,
+                'poster_url' => $p->poster_path ? Storage::disk('public')->url($p->poster_path) : null,
+                'current_price' => (float) $p->current_price,
+                'offer_price' => (float) $p->offer_price,
+                'discount_percentage' => (float) $p->discount_percentage,
+                'display_duration' => max(5, (int) $p->display_duration),
+                'is_featured' => (bool) $p->is_featured,
+            ])->values(),
+        ]);
+    }
+
+    public function markPromotionViewed(Promotion $promotion): JsonResponse
+    {
+        $promotion->increment('display_count');
 
         return response()->json(['ok' => true]);
     }
