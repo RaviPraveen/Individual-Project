@@ -17,22 +17,24 @@ class Setting extends Model
     protected $fillable = ['key', 'value'];
 
     /**
-     * Cached with a sentinel for "key not found" — Cache::rememberForever
-     * can't distinguish a genuinely missing key from one whose value is an
-     * empty string, so a literal miss is represented by a sentinel object
-     * rather than null. Same lesson as BillingSetting/ReceiptSetting's
-     * firstOrCreate([]) default-attribute bug found earlier in this project.
+     * Cached with a "found" flag alongside the value so a literal miss can
+     * be told apart from a genuinely empty string. The flag lives in an
+     * array rather than an object sentinel — the database cache driver
+     * unserializes with allowed_classes disabled, so any cached object
+     * (even a bare stdClass) comes back as __PHP_Incomplete_Class. Arrays
+     * don't hit that restriction. Same underlying lesson as
+     * BillingSetting/ReceiptSetting's firstOrCreate([]) default-attribute
+     * bug found earlier in this project: know what "missing" looks like.
      */
     public static function get(string $key, $default = null)
     {
-        $missing = new \stdClass();
-        $cached = Cache::rememberForever("setting:{$key}", function () use ($key, $missing) {
+        $cached = Cache::rememberForever("setting:{$key}", function () use ($key) {
             $row = static::where('key', $key)->first();
 
-            return $row ? $row->value : $missing;
+            return ['found' => (bool) $row, 'value' => $row?->value];
         });
 
-        return $cached instanceof \stdClass ? $default : $cached;
+        return $cached['found'] ? $cached['value'] : $default;
     }
 
     public static function set(string $key, ?string $value): void

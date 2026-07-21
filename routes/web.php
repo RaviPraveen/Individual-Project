@@ -6,12 +6,15 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ForecastController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\ReceiptSettingController;
 use App\Http\Controllers\Admin\ReorderController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\SupplierReturnController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\Cashier\BillingController;
@@ -41,12 +44,19 @@ Route::middleware(['auth', 'verified', 'role:admin'])
 
         Route::resource('products', ProductController::class)->except('show');
         Route::post('products/{product}/adjust-stock', [ProductController::class, 'adjustStock'])->name('products.adjust-stock');
+        Route::get('products-import', [ProductController::class, 'importForm'])->name('products.import.form');
+        Route::post('products-import', [ProductController::class, 'import'])->name('products.import');
 
         Route::resource('suppliers', SupplierController::class)->except('show');
 
         Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index', 'create', 'store', 'show']);
         Route::post('purchase-orders/{purchase_order}/mark-received', [PurchaseOrderController::class, 'markReceived'])->name('purchase-orders.mark-received');
         Route::post('purchase-orders/{purchase_order}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
+
+        Route::resource('supplier-returns', SupplierReturnController::class)->only(['index', 'create', 'store', 'show']);
+        Route::post('supplier-returns/{supplier_return}/complete', [SupplierReturnController::class, 'complete'])->name('supplier-returns.complete');
+        Route::post('supplier-returns/{supplier_return}/cancel', [SupplierReturnController::class, 'cancel'])->name('supplier-returns.cancel');
+        Route::get('supplier-returns/{supplier_return}/pdf', [SupplierReturnController::class, 'pdf'])->name('supplier-returns.pdf');
 
         Route::get('/reorder-assistant', [ReorderController::class, 'index'])->name('reorder.index');
 
@@ -59,6 +69,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             Route::get('/by-category', [ReportController::class, 'byCategory'])->name('by-category');
             Route::get('/by-cashier', [ReportController::class, 'byCashier'])->name('by-cashier');
             Route::get('/low-stock', [ReportController::class, 'lowStock'])->name('low-stock');
+            Route::get('/near-expiry', [ReportController::class, 'nearExpiry'])->name('near-expiry');
+            Route::get('/dead-stock', [ReportController::class, 'deadStock'])->name('dead-stock');
             Route::get('/profit', [ReportController::class, 'profit'])->name('profit');
         });
 
@@ -89,11 +101,19 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             Route::put('/', [BillingSettingController::class, 'update'])->name('update');
         });
 
+        Route::prefix('settings')->name('settings.')->group(function () {
+            Route::get('/', [SettingController::class, 'edit'])->name('edit');
+            Route::put('/', [SettingController::class, 'update'])->name('update');
+        });
+
         // User Management (admin only)
         Route::resource('users', UserController::class)->except('show');
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
         Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
+
+        Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+        Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     });
 
 Route::middleware(['auth', 'verified', 'role:admin,cashier'])->group(function () {

@@ -10,6 +10,7 @@ use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -121,6 +122,126 @@ class ProductController extends Controller
         );
 
         return redirect()->route('admin.products.index')->with('success', 'Stock adjusted.');
+    }
+
+    public function importForm(): View
+    {
+        return view('admin.products.import');
+    }
+
+    /**
+     * Bulk create/update products from a CSV (name, sku, category, cost
+     * price, selling price, stock, reorder level). Matching is by SKU: an
+     * existing SKU updates that product, a new one creates it. Unknown
+     * category names are auto-created rather than skipped, since forcing
+     * the admin to pre-create every category defeats the point of a bulk
+     * import. Rows failing validation are skipped with a reason instead of
+     * aborting the whole file.
+     */
+    public function import(Request $request): View
+    {
+        $request->validate([
+            'csv_file' => ['required', 'file', 'mimes:csv,txt'],
+        ]);
+
+        $handle = fopen($request->file('csv_file')->getRealPath(), 'r');
+        $header = array_map(fn ($h) => strtolower(trim($h)), fgetcsv($handle));
+        $columnIndex = array_flip($header);
+
+        $required = ['name', 'sku', 'category', 'cost price', 'selling price', 'stock', 'reorder level'];
+        $missingColumns = array_diff($required, $header);
+
+        if (! empty($missingColumns)) {
+            fclose($handle);
+
+            return view('admin.products.import', [
+                'summary' => null,
+                'headerError' => 'CSV is missing required column(s): '.implode(', ', $missingColumns),
+            ]);
+        }
+
+        $created = 0;
+        $updated = 0;
+        $skipped = [];
+        $rowNumber = 1;
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $rowNumber++;
+
+            if (count(array_filter($row, fn ($v) => trim((string) $v) !== '')) === 0) {
+                continue;
+            }
+
+            $data = [
+                'name' => trim($row[$columnIndex['name']] ?? ''),
+                'sku' => trim($row[$columnIndex['sku']] ?? ''),
+                'category' => trim($row[$columnIndex['category']] ?? ''),
+                'cost_price' => trim($row[$columnIndex['cost price']] ?? ''),
+                'selling_price' => trim($row[$columnIndex['selling price']] ?? ''),
+                'stock_qty' => trim($row[$columnIndex['stock']] ?? ''),
+                'reorder_level' => trim($row[$columnIndex['reorder level']] ?? ''),
+            ];
+
+            $validator = Validator::make($data, [
+                'name' => ['required', 'string', 'max:255'],
+                'sku' => ['required', 'string', 'max:255'],
+                'cost_price' => ['required', 'numeric', 'min:0'],
+                'selling_price' => ['required', 'numeric', 'min:0'],
+                'stock_qty' => ['required', 'integer', 'min:0'],
+                'reorder_level' => ['required', 'integer', 'min:0'],
+            ]);
+
+            if ($validator->fails()) {
+                $skipped[] = [
+                    'row' => $rowNumber,
+                    'sku' => $data['sku'] !== '' ? $data['sku'] : '(none)',
+                    'reason' => implode(' ', $validator->errors()->all()),
+                ];
+
+                continue;
+            }
+
+            $categoryId = null;
+
+            if ($data['category'] !== '') {
+                $categoryId = Category::whereRaw('LOWER(name) = ?', [strtolower($data['category'])])
+                    ->value('id')
+                    ?? Category::create(['name' => $data['category']])->id;
+            }
+
+            $payload = [
+                'name' => $data['name'],
+                'category_id' => $categoryId,
+                'cost_price' => $data['cost_price'],
+                'selling_price' => $data['selling_price'],
+                'stock_qty' => $data['stock_qty'],
+                'reorder_level' => $data['reorder_level'],
+            ];
+
+            $existing = Product::where('sku', $data['sku'])->first();
+
+            if ($existing) {
+                $existing->update($payload);
+                $updated++;
+            } else {
+                Product::create($payload + [
+                    'sku' => $data['sku'],
+                    'unit' => 'pcs',
+                    'is_active' => true,
+                ]);
+                $created++;
+            }
+        }
+
+        fclose($handle);
+
+        return view('admin.products.import', [
+            'summary' => [
+                'created' => $created,
+                'updated' => $updated,
+                'skipped' => $skipped,
+            ],
+        ]);
     }
 
     public function search(Request $request): JsonResponse
