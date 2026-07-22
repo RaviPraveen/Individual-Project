@@ -36,8 +36,8 @@
                                 </span>
                             </div>
                             <div class="input-group">
-                                <input type="text" id="ai-order-text" class="form-control border-end-0 bg-light" placeholder="{{ __('Type order in plain words, e.g. 2kg rice, 1 milk powder, 3 sugar...') }}" autocomplete="off" style="font-size: 0.9rem; height: 38px;">
-                                <button type="button" class="btn btn-primary px-3 fw-bold btn-sm" id="ai-order-parse-btn">
+                                <input type="text" id="ai-order-text" class="form-control" placeholder="{{ __('Type order in plain words, e.g. 2kg rice, 1 milk powder, 3 sugar...') }}" autocomplete="off">
+                                <button type="button" class="btn btn-primary px-3 fw-bold" id="ai-order-parse-btn">
                                     <i class="bi bi-magic me-1"></i> {{ __('Parse') }}
                                 </button>
                             </div>
@@ -67,6 +67,12 @@
                         <div class="input-group pos-billing-search-container border rounded-3 overflow-hidden">
                             <span class="input-group-text bg-white border-0 text-muted px-3"><i class="bi bi-barcode fs-4 text-primary"></i></span>
                             <input type="text" id="product-search" class="form-control border-0 ps-0 text-dark fw-semibold pos-billing-search-input" placeholder="{{ __('Scan barcode sticker or type product name / SKU...') }}" autocomplete="off" autofocus>
+                            <span class="input-group-text bg-white border-0 px-2 d-none" id="product-search-spinner">
+                                <span class="spinner-border spinner-border-sm text-primary" style="width:1rem;height:1rem;"></span>
+                            </span>
+                            <button type="button" class="btn btn-link border-0 text-muted px-2 d-none" id="product-search-clear-btn" title="{{ __('Clear search') }}">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </button>
                             <button type="button" class="btn btn-outline-primary border-0 border-start" id="scan-camera-btn" title="{{ __('Scan Barcode with Camera') }}" data-bs-toggle="tooltip">
                                 <i class="bi bi-camera-fill"></i>
                             </button>
@@ -249,6 +255,9 @@
 
         const productSearchInput = document.getElementById('product-search');
         const productResults = document.getElementById('product-results');
+        const productSearchClearBtn = document.getElementById('product-search-clear-btn');
+        const productSearchSpinner = document.getElementById('product-search-spinner');
+        let highlightedIndex = -1;
         const customerSearchInput = document.getElementById('customer-search');
         const customerResults = document.getElementById('customer-results');
         const customerSelectedPanel = document.getElementById('customer-selected-panel');
@@ -272,14 +281,16 @@
 
         function renderProductResults(products) {
             productResults.innerHTML = '';
+            highlightedIndex = -1;
             if (!products || products.length === 0) {
                 productResults.innerHTML = '<div class="list-group-item text-muted small py-3 text-center">{{ __('No products found') }}</div>';
                 return;
             }
 
-            products.forEach(p => {
+            products.forEach((p, index) => {
                 const item = document.createElement('button');
                 item.type = 'button';
+                item.dataset.index = index;
                 item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2.5 px-3 border-bottom';
                 item.innerHTML = `
                     <div>
@@ -293,29 +304,87 @@
                         </span>
                     </div>
                 `;
+                item.addEventListener('mouseenter', () => setHighlighted(index));
                 item.addEventListener('click', () => {
                     addToCart(p);
                     productSearchInput.value = '';
                     productResults.innerHTML = '';
+                    productSearchClearBtn.classList.add('d-none');
                     productSearchInput.focus();
                 });
                 productResults.appendChild(item);
             });
         }
 
+        function setHighlighted(index) {
+            const items = productResults.querySelectorAll('.list-group-item-action');
+            items.forEach(el => el.classList.remove('active'));
+            if (index >= 0 && index < items.length) {
+                items[index].classList.add('active');
+                items[index].scrollIntoView({ block: 'nearest' });
+                highlightedIndex = index;
+            } else {
+                highlightedIndex = -1;
+            }
+        }
+
         function searchProducts(term) {
             if (!term) {
                 productResults.innerHTML = '';
+                productSearchSpinner.classList.add('d-none');
                 return;
             }
-            fetch(`${productSearchUrl}?q=${encodeURIComponent(term)}`).then(r => r.json()).then(renderProductResults);
+            productSearchSpinner.classList.remove('d-none');
+            fetch(`${productSearchUrl}?q=${encodeURIComponent(term)}`)
+                .then(r => r.json())
+                .then(products => {
+                    renderProductResults(products);
+                })
+                .finally(() => productSearchSpinner.classList.add('d-none'));
         }
 
-        productSearchInput.addEventListener('input', debounce((e) => searchProducts(e.target.value), 250));
+        productSearchInput.addEventListener('input', (e) => {
+            productSearchClearBtn.classList.toggle('d-none', !e.target.value);
+            debounce((term) => searchProducts(term), 250)(e.target.value);
+        });
+
+        productSearchClearBtn.addEventListener('click', () => {
+            productSearchInput.value = '';
+            productResults.innerHTML = '';
+            productSearchClearBtn.classList.add('d-none');
+            productSearchInput.focus();
+        });
 
         productSearchInput.addEventListener('keydown', (e) => {
+            const items = productResults.querySelectorAll('.list-group-item-action');
+
+            if (e.key === 'ArrowDown' && items.length > 0) {
+                e.preventDefault();
+                setHighlighted(highlightedIndex < items.length - 1 ? highlightedIndex + 1 : 0);
+                return;
+            }
+
+            if (e.key === 'ArrowUp' && items.length > 0) {
+                e.preventDefault();
+                setHighlighted(highlightedIndex > 0 ? highlightedIndex - 1 : items.length - 1);
+                return;
+            }
+
+            if (e.key === 'Escape') {
+                productResults.innerHTML = '';
+                return;
+            }
+
             if (e.key === 'Enter') {
                 e.preventDefault();
+
+                // An item highlighted via arrow keys always wins over the
+                // exact-match-by-typed-text heuristic below.
+                if (highlightedIndex >= 0 && items[highlightedIndex]) {
+                    items[highlightedIndex].click();
+                    return;
+                }
+
                 const term = e.target.value.trim();
                 if (!term) return;
                 fetch(`${productSearchUrl}?q=${encodeURIComponent(term)}`).then(r => r.json()).then(products => {
@@ -329,6 +398,7 @@
                         return;
                     }
                     productSearchInput.value = '';
+                    productSearchClearBtn.classList.add('d-none');
                     productResults.innerHTML = '';
                 });
             }
@@ -375,7 +445,10 @@
                 row.innerHTML = `
                     <td class="ps-4">
                         <div class="fw-bold text-dark">${item.name}</div>
-                        <div class="small text-muted">SKU: ${item.sku || '-'}</div>
+                        <div class="small text-muted d-flex align-items-center gap-2">
+                            <span>SKU: ${item.sku || '-'}</span>
+                            ${item.stock_qty <= 5 ? `<span class="badge bg-warning-subtle text-warning-emphasis rounded-pill" style="font-size:0.68rem;">${item.stock_qty} in stock</span>` : ''}
+                        </div>
                     </td>
                     <td class="text-center">
                         <div class="qty-stepper">

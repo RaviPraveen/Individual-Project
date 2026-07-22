@@ -177,6 +177,120 @@ small, .text-muted {
   color: var(--pos-heading);
 }
 
+/* Bootstrap's contextual button variants (success/danger/warning/info, plus
+   the outline-primary used for things like the camera-scan button) had no
+   overrides here, so they were falling back to Bootstrap 5's stock palette
+   (#0d6efd, #198754, #dc3545, #ffc107 — all visibly different shades from
+   this app's --pos-* brand tokens) instead of matching the rest of the UI. */
+.btn-outline-primary {
+  background: #FFFFFF;
+  border-color: var(--pos-brand);
+  color: var(--pos-brand);
+}
+
+.btn-outline-primary:hover {
+  background: var(--pos-brand);
+  border-color: var(--pos-brand);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background: var(--pos-success);
+  border-color: var(--pos-success);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-success:hover {
+  background: var(--pos-success-hover);
+  border-color: var(--pos-success-hover);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-outline-success {
+  background: #FFFFFF;
+  border-color: var(--pos-success);
+  color: var(--pos-success);
+}
+
+.btn-outline-success:hover {
+  background: var(--pos-success);
+  border-color: var(--pos-success);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: var(--pos-danger);
+  border-color: var(--pos-danger);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+  background: var(--pos-danger-hover);
+  border-color: var(--pos-danger-hover);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-outline-danger {
+  background: #FFFFFF;
+  border-color: var(--pos-danger);
+  color: var(--pos-danger);
+}
+
+.btn-outline-danger:hover {
+  background: var(--pos-danger);
+  border-color: var(--pos-danger);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+.btn-warning {
+  background: var(--pos-warning);
+  border-color: var(--pos-warning);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.btn-warning:hover {
+  background: #D97706;
+  border-color: #D97706;
+  color: #FFFFFF;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-outline-warning {
+  background: #FFFFFF;
+  border-color: var(--pos-warning);
+  color: #B45309;
+}
+
+.btn-outline-warning:hover {
+  background: var(--pos-warning);
+  border-color: var(--pos-warning);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+.btn-info, .btn-outline-info {
+  background: #FFFFFF;
+  border-color: var(--pos-info);
+  color: var(--pos-info);
+}
+
+.btn-info:hover, .btn-outline-info:hover {
+  background: var(--pos-info);
+  border-color: var(--pos-info);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
 /* Action Icon Buttons (40x40px, 10px Radius) */
 .btn-action {
   width: 38px;
@@ -688,6 +802,17 @@ small, .text-muted {
 @keyframes pos-scan-fade-in {
   from { opacity: 0; transform: scale(0.97); }
   to { opacity: 1; transform: scale(1); }
+}
+
+/* Bootstrap's default .list-group-item-action.active uses its own stock
+   primary blue — used for the arrow-key-highlighted row in the POS
+   product/customer search dropdowns, so it needs the same brand-blue
+   treatment as everything else rather than a mismatched shade. */
+.list-group-item-action.active {
+  background-color: var(--pos-surface-2);
+  border-color: var(--pos-border);
+  color: inherit;
+  z-index: 1;
 }
 
 /* ==========================================================================
