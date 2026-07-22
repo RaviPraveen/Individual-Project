@@ -3,15 +3,26 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use App\Models\Promotion;
 use App\Services\AiService;
 use App\Services\PosterComposer;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class PromotionPosterController extends Controller
 {
+    /**
+     * Session key for a poster generated on the Create Promotion page,
+     * before any Promotion row exists to attach pending_poster_path to.
+     * Scoped to the session (one draft at a time per admin) rather than
+     * trusting a client-supplied file path, so PromotionController::store()
+     * never has to validate an attacker-controlled storage path.
+     */
+    public const DRAFT_SESSION_KEY = 'promotion_draft_poster';
+
     public function __construct(
         private AiService $ai,
         private PosterComposer $composer,
@@ -26,7 +37,7 @@ class PromotionPosterController extends Controller
     {
         $promotion->loadMissing('product.category');
 
-        $prompt = $this->buildPrompt($promotion);
+        $prompt = $this->buildPrompt($promotion->product);
         $backgroundBytes = $this->ai->generateImage($prompt);
         $usedAi = $backgroundBytes !== null;
 
@@ -117,13 +128,80 @@ class PromotionPosterController extends Controller
     }
 
     /**
+     * Generates a poster for the Create Promotion page, before any
+     * Promotion row exists. Builds an unsaved Promotion purely to reuse
+     * PosterComposer's compositing (it only reads attributes, never
+     * touches the database), then stashes the result in the session
+     * instead of a pending_poster_path column — PromotionController::store()
+     * picks it up from there if the admin clicks "Use This Poster".
+     */
+    public function generateDraft(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'product_id' => ['required', 'exists:products,id'],
+            'title' => ['required', 'string', 'max:255'],
+            'offer_price' => ['required', 'numeric', 'min:0'],
+            'description' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $product = Product::with('category')->findOrFail($validated['product_id']);
+
+        $draftPromotion = new Promotion([
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'current_price' => $product->selling_price,
+            'offer_price' => $validated['offer_price'],
+        ]);
+        $draftPromotion->refreshDiscountPercentage();
+
+        $prompt = $this->buildPrompt($product);
+        $backgroundBytes = $this->ai->generateImage($prompt);
+        $usedAi = $backgroundBytes !== null;
+        $posterBytes = $this->composer->compose($backgroundBytes ?? '', $draftPromotion);
+
+        $previous = session(self::DRAFT_SESSION_KEY);
+        if ($previous) {
+            Storage::disk('public')->delete($previous['path']);
+        }
+
+        $path = 'promotions/pending/draft-'.Str::random(12).'.jpg';
+        Storage::disk('public')->put($path, $posterBytes);
+
+        session([self::DRAFT_SESSION_KEY => [
+            'path' => $path,
+            'prompt' => $prompt,
+            'used_ai' => $usedAi,
+            'created_at' => now()->toIso8601String(),
+        ]]);
+
+        return response()->json([
+            'poster_url' => Storage::disk('public')->url($path),
+            'used_ai' => $usedAi,
+            'message' => $usedAi
+                ? __('Poster generated.')
+                : __('AI image service is unavailable right now — generated a placeholder poster instead. You can still use it or try again shortly.'),
+        ]);
+    }
+
+    public function discardDraft(): JsonResponse
+    {
+        $draft = session(self::DRAFT_SESSION_KEY);
+
+        if ($draft) {
+            Storage::disk('public')->delete($draft['path']);
+            session()->forget(self::DRAFT_SESSION_KEY);
+        }
+
+        return response()->json(['message' => __('Generated poster discarded.')]);
+    }
+
+    /**
      * Deliberately asks for a text-free background — see PosterComposer's
      * class docblock for why real price/title text is composited
      * separately rather than trusted to the image model.
      */
-    private function buildPrompt(Promotion $promotion): string
+    private function buildPrompt(?Product $product): string
     {
-        $product = $promotion->product;
         $category = $product?->category?->name ?? 'grocery';
 
         return "Create a premium supermarket promotional poster background. ".

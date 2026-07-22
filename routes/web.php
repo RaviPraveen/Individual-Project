@@ -82,6 +82,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::resource('promotions', PromotionController::class)->except('show');
         Route::post('promotions/{promotion}/toggle-status', [PromotionController::class, 'toggleStatus'])->name('promotions.toggle-status');
         Route::post('promotions-bulk-action', [PromotionController::class, 'bulkAction'])->name('promotions.bulk-action');
+        Route::post('promotions/poster/generate-draft', [PromotionPosterController::class, 'generateDraft'])->name('promotions.poster.generate-draft');
+        Route::post('promotions/poster/discard-draft', [PromotionPosterController::class, 'discardDraft'])->name('promotions.poster.discard-draft');
         Route::post('promotions/{promotion}/poster/generate', [PromotionPosterController::class, 'generate'])->name('promotions.poster.generate');
         Route::post('promotions/{promotion}/poster/approve', [PromotionPosterController::class, 'approve'])->name('promotions.poster.approve');
         Route::post('promotions/{promotion}/poster/discard', [PromotionPosterController::class, 'discard'])->name('promotions.poster.discard');

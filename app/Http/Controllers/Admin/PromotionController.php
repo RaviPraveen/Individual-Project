@@ -68,6 +68,11 @@ class PromotionController extends Controller
     {
         return view('admin.promotions.create', [
             'products' => Product::where('is_active', true)->orderBy('name')->get(['id', 'name', 'selling_price', 'category_id']),
+            // Restores the generated-poster preview if the admin generated
+            // one, then got redirected back here by a validation failure on
+            // some other field — otherwise they'd lose the AI poster just
+            // because e.g. the end date was blank.
+            'draftPoster' => session(PromotionPosterController::DRAFT_SESSION_KEY),
         ]);
     }
 
@@ -83,10 +88,34 @@ class PromotionController extends Controller
         $promotion->status = $promotion->dateDerivedStatus();
         $promotion->created_by = $request->user()->id;
 
+        $draft = session(PromotionPosterController::DRAFT_SESSION_KEY);
+
         if ($request->hasFile('poster_image')) {
             $promotion->poster_path = $request->file('poster_image')->store('promotions', 'public');
             $promotion->poster_source = 'custom';
+        } elseif ($request->boolean('use_generated_poster') && $draft && Storage::disk('public')->exists($draft['path'])) {
+            // Move out of the pending/ scratch directory so the file lives
+            // wherever any other approved poster does once it's actually
+            // linked to a real promotion.
+            $finalPath = 'promotions/'.basename($draft['path']);
+            Storage::disk('public')->move($draft['path'], $finalPath);
+            $promotion->poster_path = $finalPath;
+            $promotion->poster_source = 'ai';
+            $promotion->ai_generations = [[
+                'path' => $finalPath,
+                'prompt' => $draft['prompt'] ?? null,
+                'used_ai' => $draft['used_ai'] ?? false,
+                'created_at' => $draft['created_at'] ?? now()->toIso8601String(),
+            ]];
         }
+
+        // Either way this create attempt is resolving the draft's lifecycle:
+        // used (moved above) or abandoned (delete the scratch file so it
+        // doesn't linger forever).
+        if ($draft && $promotion->poster_source !== 'ai') {
+            Storage::disk('public')->delete($draft['path']);
+        }
+        session()->forget(PromotionPosterController::DRAFT_SESSION_KEY);
 
         $promotion->save();
 
