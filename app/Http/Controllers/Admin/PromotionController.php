@@ -17,7 +17,7 @@ class PromotionController extends Controller
     {
         Promotion::syncDueStatuses();
 
-        $query = Promotion::query()->with('product');
+        $query = Promotion::query()->with(['product', 'creator']);
 
         if ($search = $request->input('q')) {
             $query->where(function ($q) use ($search) {
