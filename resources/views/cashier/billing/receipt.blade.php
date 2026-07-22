@@ -33,7 +33,7 @@
 
             <div class="card">
                 <div class="card-body">
-                    @include('receipts._body', ['settings' => $settings, 'data' => $data])
+                    @include('receipts._body', ['settings' => $settings, 'data' => $data, 'forPdf' => false])
                 </div>
             </div>
         </div>

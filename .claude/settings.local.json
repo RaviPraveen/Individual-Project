@@ -67,7 +67,15 @@
       "Bash(php -l app/Http/Controllers/Admin/PromotionAnalyticsController.php)",
       "Bash(php -l app/Http/Controllers/Admin/DashboardController.php)",
       "Bash(node -e ' *)",
-      "Bash(grep -n \"cartBody.appendChild\\\\|row.innerHTML = \\\\`\" resources/views/cashier/billing/index.blade.php)"
+      "Bash(grep -n \"cartBody.appendChild\\\\|row.innerHTML = \\\\`\" resources/views/cashier/billing/index.blade.php)",
+      "Bash(php -r \"echo realpath\\('public/storage'\\), PHP_EOL; var_dump\\(is_link\\('public/storage'\\)\\);\")",
+      "Bash(xargs grep -n \"isRemoteEnabled\\\\|enable_remote\")",
+      "Bash(ls -la /c/xampp/htdocs/ | grep -i storage *)",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 80 -ErrorAction SilentlyContinue | Select-Object -First 3 OwningProcess\")",
+      "Bash(powershell -Command \"Get-Process -Id \\(Get-NetTCPConnection -LocalPort 80 -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty OwningProcess\\) -ErrorAction SilentlyContinue | Select-Object ProcessName,Path\")",
+      "Read(//dev/**)",
+      "Bash(curl -s -o /tmp/receipt_test.pdf -w \"STATUS:%{http_code} SIZE:%{size_download} TYPE:%{content_type}\\\\n\" \"http://localhost/Individual_Projct/public/cashier/billing/18/receipt/pdf\" -H \"Cookie: $\\(grep -o 'welcome-foodcity-session=[^;]*' /dev/null\\)\")",
+      "Bash(file storage/app/public/test-receipt.pdf 2>&1 *)"
     ]
   }
 }
