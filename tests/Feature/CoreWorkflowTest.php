@@ -212,8 +212,10 @@ class CoreWorkflowTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
 
+        // Billing is the one shared POS module admins also use (see
+        // AdminPosAccessTest) — dashboard and the customer-display kiosk
+        // stay cashier-only.
         $this->actingAs($admin)->get(route('cashier.dashboard'))->assertForbidden();
-        $this->actingAs($admin)->get(route('cashier.billing.index'))->assertForbidden();
         $this->actingAs($admin)->get(route('cashier.display.show'))->assertForbidden();
     }
 

@@ -145,12 +145,13 @@ Route::middleware(['auth', 'verified', 'role:admin,cashier'])->group(function ()
     Route::get('/returns/{saleReturn}', [ReturnController::class, 'show'])->name('returns.show');
 });
 
-Route::middleware(['auth', 'verified', 'role:cashier'])
+// Billing is the one shared POS module: admins get full access to the same
+// screens/routes cashiers use (not a duplicate implementation), while
+// dashboard/customer-display/ai-chat below stay cashier-only.
+Route::middleware(['auth', 'verified', 'role:cashier,admin'])
     ->prefix('cashier')
     ->name('cashier.')
     ->group(function () {
-        Route::get('/dashboard', [CashierDashboardController::class, 'index'])->name('dashboard');
-
         Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
         Route::post('/billing', [BillingController::class, 'store'])->name('billing.store');
         Route::get('/billing/{sale}/receipt', [BillingController::class, 'receipt'])->name('billing.receipt');
@@ -159,6 +160,13 @@ Route::middleware(['auth', 'verified', 'role:cashier'])
 
         Route::post('/billing/upsell-suggestion', [BillingController::class, 'upsellSuggestion'])->name('billing.upsell');
         Route::post('/billing/parse-order', [BillingController::class, 'parseOrderText'])->name('billing.parse-order');
+    });
+
+Route::middleware(['auth', 'verified', 'role:cashier'])
+    ->prefix('cashier')
+    ->name('cashier.')
+    ->group(function () {
+        Route::get('/dashboard', [CashierDashboardController::class, 'index'])->name('dashboard');
 
         Route::get('/display', [CustomerDisplayController::class, 'show'])->name('display.show');
         Route::get('/display/data', [CustomerDisplayController::class, 'data'])->name('display.data');

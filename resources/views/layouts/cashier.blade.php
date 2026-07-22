@@ -33,9 +33,17 @@
                     </div>
                 </a>
 
+                @php
+                    // Billing is the one shared POS module admins and cashiers
+                    // both use — but Dashboard/AI Assistant stay separate
+                    // per-role screens, so an admin viewing this shared shell
+                    // needs those two links pointed at their own routes
+                    // instead of the cashier-only ones (which would 403).
+                    $isAdminOnCashierShell = auth()->user()->role === 'admin';
+                @endphp
                 <nav class="pos-nav">
                     <div class="pos-nav-label">{{ __('REGISTER') }}</div>
-                    <a href="{{ route('cashier.dashboard') }}" class="{{ request()->routeIs('cashier.dashboard') ? 'active' : '' }}">
+                    <a href="{{ $isAdminOnCashierShell ? route('admin.dashboard') : route('cashier.dashboard') }}" class="{{ request()->routeIs('cashier.dashboard', 'admin.dashboard') ? 'active' : '' }}">
                         <i class="bi bi-grid-1x2-fill"></i> {{ __('Dashboard') }}
                     </a>
                     <a href="{{ route('cashier.billing.index') }}" class="{{ request()->routeIs('cashier.billing.*') ? 'active' : '' }}">
@@ -46,7 +54,7 @@
                     </a>
 
                     <div class="pos-nav-label">{{ __('OPERATIONS') }}</div>
-                    <a href="{{ route('cashier.ai-chat.index') }}" class="{{ request()->routeIs('cashier.ai-chat.*') ? 'active' : '' }}">
+                    <a href="{{ $isAdminOnCashierShell ? route('admin.ai-chat.index') : route('cashier.ai-chat.index') }}" class="{{ request()->routeIs('cashier.ai-chat.*', 'admin.ai-chat.*') ? 'active' : '' }}">
                         <i class="bi bi-stars"></i> {{ __('AI Assistant') }}
                     </a>
                 </nav>

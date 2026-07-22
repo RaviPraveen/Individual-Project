@@ -45,6 +45,8 @@
                 <thead>
                     <tr>
                         <th>{{ __('Product') }}</th>
+                        <th class="text-end">{{ __('Buying Price') }}</th>
+                        <th class="text-end">{{ __('Selling Price') }}</th>
                         <th class="text-end">{{ __('Units Sold') }}</th>
                         <th class="text-end"><a href="{{ $sortLink('revenue') }}" class="text-decoration-none text-dark">{{ __('Revenue') }} <i class="bi {{ $sortIcon('revenue') }}"></i></a></th>
                         <th class="text-end">{{ __('Cost') }}</th>
@@ -61,6 +63,8 @@
                                     <span class="badge bg-danger ms-1">{{ __('Low Margin') }}</span>
                                 @endif
                             </td>
+                            <td class="text-end">Rs {{ number_format($row->buying_price, 2) }}</td>
+                            <td class="text-end">Rs {{ number_format($row->selling_price, 2) }}</td>
                             <td class="text-end">{{ $row->qty_sold }}</td>
                             <td class="text-end">Rs {{ number_format($row->revenue, 2) }}</td>
                             <td class="text-end">Rs {{ number_format($row->cost, 2) }}</td>
@@ -69,7 +73,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="p-0"><x-empty-state icon="bi-box-seam" :title="__('No sales in this range')" /></td>
+                            <td colspan="8" class="p-0"><x-empty-state icon="bi-box-seam" :title="__('No sales in this range')" /></td>
                         </tr>
                     @endforelse
                 </tbody>

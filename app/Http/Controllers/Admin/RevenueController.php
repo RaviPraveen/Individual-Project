@@ -129,8 +129,8 @@ class RevenueController extends Controller
         };
 
         if ($request->query('export') === 'csv') {
-            return $this->csv('revenue-by-product.csv', ['Product', 'Units Sold', 'Revenue', 'Cost', 'Profit', 'Margin %'], $rows->map(fn ($r) => [
-                $r->name, $r->qty_sold, $r->revenue, $r->cost, $r->profit, $r->margin_percent,
+            return $this->csv('revenue-by-product.csv', ['Product', 'Buying Price', 'Selling Price', 'Units Sold', 'Revenue', 'Cost', 'Profit', 'Margin %'], $rows->map(fn ($r) => [
+                $r->name, $r->buying_price, $r->selling_price, $r->qty_sold, $r->revenue, $r->cost, $r->profit, $r->margin_percent,
             ]));
         }
 
@@ -301,8 +301,8 @@ class RevenueController extends Controller
             ->join('products', 'products.id', '=', 'sale_items.product_id')
             ->whereBetween('sales.created_at', [$start, $end])
             ->when($categoryId, fn ($q) => $q->where('products.category_id', $categoryId))
-            ->selectRaw('products.id as product_id, products.name as name, SUM(sale_items.quantity) as qty_sold, SUM(sale_items.line_total) as revenue, SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost_price)) as cost')
-            ->groupBy('products.id', 'products.name')
+            ->selectRaw('products.id as product_id, products.name as name, products.cost_price as buying_price, products.selling_price as selling_price, SUM(sale_items.quantity) as qty_sold, SUM(sale_items.line_total) as revenue, SUM(sale_items.quantity * COALESCE(sale_items.cost_price, products.cost_price)) as cost')
+            ->groupBy('products.id', 'products.name', 'products.cost_price', 'products.selling_price')
             ->get()
             ->map(function ($row) {
                 $margin = $this->withProfitMargin($row);

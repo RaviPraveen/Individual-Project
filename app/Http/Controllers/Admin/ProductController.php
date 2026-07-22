@@ -251,9 +251,16 @@ class ProductController extends Controller
         $products = Product::query()
             ->where('is_active', true)
             ->when($term !== '', function ($query) use ($term) {
-                $query->where('name', 'like', "%{$term}%")
-                    ->orWhere('sku', 'like', "%{$term}%")
-                    ->orWhere('barcode', 'like', "%{$term}%");
+                // Must be a nested group — unparenthesized orWhere() calls
+                // apply at the top level of the query and escape the
+                // is_active scope above (is_active=1 AND name LIKE x) OR sku
+                // LIKE x OR barcode LIKE x, which would let inactive
+                // products leak into POS search results by SKU/barcode.
+                $query->where(function ($q) use ($term) {
+                    $q->where('name', 'like', "%{$term}%")
+                        ->orWhere('sku', 'like', "%{$term}%")
+                        ->orWhere('barcode', 'like', "%{$term}%");
+                });
             })
             ->orderBy('name')
             ->limit(10)

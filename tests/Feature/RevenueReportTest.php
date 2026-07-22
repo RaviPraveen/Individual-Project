@@ -101,6 +101,22 @@ class RevenueReportTest extends TestCase
         $this->assertGreaterThan(10, $rows['Healthy Margin Item']->margin_percent);
     }
 
+    public function test_revenue_by_product_shows_the_products_actual_buying_and_selling_price(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        $product = Product::create([
+            'name' => 'Rice 5kg', 'sku' => 'SKU-RICE-PRICES', 'cost_price' => 1000,
+            'selling_price' => 1200, 'stock_qty' => 20, 'reorder_level' => 5,
+        ]);
+        $this->saleWithItem($product, 1);
+
+        $response = $this->actingAs($admin)->get(route('admin.revenue.by-product'));
+        $row = $response->viewData('rows')->firstWhere('name', 'Rice 5kg');
+
+        $this->assertEqualsWithDelta(1000.0, (float) $row->buying_price, 0.01);
+        $this->assertEqualsWithDelta(1200.0, (float) $row->selling_price, 0.01);
+    }
+
     public function test_revenue_by_period_csv_export_streams_correctly(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
