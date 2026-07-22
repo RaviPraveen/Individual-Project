@@ -85,6 +85,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::post('promotions/{promotion}/poster/generate', [PromotionPosterController::class, 'generate'])->name('promotions.poster.generate');
         Route::post('promotions/{promotion}/poster/approve', [PromotionPosterController::class, 'approve'])->name('promotions.poster.approve');
         Route::post('promotions/{promotion}/poster/discard', [PromotionPosterController::class, 'discard'])->name('promotions.poster.discard');
+        Route::delete('promotions/{promotion}/poster', [PromotionPosterController::class, 'destroyLive'])->name('promotions.poster.destroy');
 
         Route::prefix('revenue')->name('revenue.')->group(function () {
             Route::get('/', [RevenueController::class, 'index'])->name('index');

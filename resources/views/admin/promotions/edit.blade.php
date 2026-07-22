@@ -29,6 +29,14 @@
                             <div class="text-muted text-center p-4" id="live-poster-empty"><i class="bi bi-image fs-1 d-block mb-2"></i>{{ __('No poster yet') }}</div>
                         @endif
                     </div>
+                    <div class="d-flex gap-2 mt-2">
+                        <a href="{{ $promotion->poster_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($promotion->poster_path) : '#' }}" download id="btn-download-live" class="btn btn-outline-secondary btn-sm {{ $promotion->poster_path ? '' : 'd-none' }}">
+                            <i class="bi bi-download me-1"></i> {{ __('Download') }}
+                        </a>
+                        <button type="button" id="btn-delete-live" class="btn btn-outline-danger btn-sm {{ $promotion->poster_path ? '' : 'd-none' }}" data-confirm="{{ __('Delete the live poster? The Customer Display will show no image for this promotion until a new one is generated or uploaded.') }}" data-confirm-icon="warning">
+                            <i class="bi bi-trash3 me-1"></i> {{ __('Delete') }}
+                        </button>
+                    </div>
                 </div>
                 <div class="col-md-7">
                     <div class="text-muted small mb-2 fw-semibold text-uppercase" style="letter-spacing:0.05em;font-size:0.7rem;">{{ __('Preview — Not Live Until Approved') }}</div>
@@ -54,6 +62,9 @@
                         <button type="button" id="btn-discard" class="btn btn-outline-danger px-3 {{ $promotion->pending_poster_path ? '' : 'd-none' }}">
                             <i class="bi bi-x-circle me-1"></i> {{ __('Discard') }}
                         </button>
+                        <a href="{{ $promotion->pending_poster_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($promotion->pending_poster_path) : '#' }}" download id="btn-download-preview" class="btn btn-outline-secondary px-3 {{ $promotion->pending_poster_path ? '' : 'd-none' }}">
+                            <i class="bi bi-download me-1"></i> {{ __('Download') }}
+                        </a>
                         <a href="#poster_image" onclick="document.getElementById('poster_image').focus();" class="btn btn-outline-secondary px-3">
                             <i class="bi bi-upload me-1"></i> {{ __('Upload Custom Image Instead') }}
                         </a>
@@ -87,12 +98,16 @@
             const generateUrl = '{{ route('admin.promotions.poster.generate', $promotion) }}';
             const approveUrl = '{{ route('admin.promotions.poster.approve', $promotion) }}';
             const discardUrl = '{{ route('admin.promotions.poster.discard', $promotion) }}';
+            const destroyLiveUrl = '{{ route('admin.promotions.poster.destroy', $promotion) }}';
             const csrf = document.querySelector('meta[name="csrf-token"]').content;
 
             const btnGenerate = document.getElementById('btn-generate');
             const btnGenerateLabel = document.getElementById('btn-generate-label');
             const btnApprove = document.getElementById('btn-approve');
             const btnDiscard = document.getElementById('btn-discard');
+            const btnDownloadPreview = document.getElementById('btn-download-preview');
+            const btnDownloadLive = document.getElementById('btn-download-live');
+            const btnDeleteLive = document.getElementById('btn-delete-live');
             const skeleton = document.getElementById('poster-skeleton');
             const previewWrap = document.getElementById('poster-preview-wrap');
             const previewNote = document.getElementById('poster-preview-note');
@@ -109,6 +124,8 @@
                     previewWrap.appendChild(img);
                 }
                 img.src = url + '?t=' + Date.now();
+                btnDownloadPreview.href = url;
+                btnDownloadPreview.classList.remove('d-none');
             }
 
             btnGenerate.addEventListener('click', function () {
@@ -158,9 +175,13 @@
                             document.getElementById('live-poster-wrap').appendChild(liveImg);
                         }
                         liveImg.src = pendingSrc;
+                        btnDownloadLive.href = pendingSrc.split('?')[0];
+                        btnDownloadLive.classList.remove('d-none');
+                        btnDeleteLive.classList.remove('d-none');
                     }
                     btnApprove.classList.add('d-none');
                     btnDiscard.classList.add('d-none');
+                    btnDownloadPreview.classList.add('d-none');
                     window.posToast ? window.posToast('{{ __('Poster approved and is now live.') }}', 'success') : null;
                 });
             });
@@ -175,8 +196,36 @@
                     previewWrap.insertAdjacentHTML('beforeend', '<div class="text-muted text-center p-4" id="poster-preview-empty"><i class="bi bi-magic fs-1 d-block mb-2"></i>{{ __('Generate a poster to preview it here') }}</div>');
                     btnApprove.classList.add('d-none');
                     btnDiscard.classList.add('d-none');
+                    btnDownloadPreview.classList.add('d-none');
                     btnGenerateLabel.textContent = '{{ __('Generate Poster') }}';
                     window.posToast ? window.posToast('{{ __('Generated poster discarded.') }}', 'success') : null;
+                });
+            });
+
+            // btn-delete-live isn't wrapped in its own <form> (it sits above
+            // the promotion edit form, not inside it), so pos.js's global
+            // data-confirm handler falls through to its "plain button" path
+            // and dispatches this custom event instead of submitting a form.
+            // That handler also sets el.dataset.confirmed = '1' permanently
+            // after the first confirm and never clears it — invisible for
+            // form-based buttons (the page always reloads after submit,
+            // resetting the flag for free) but it would silently no-op a
+            // second click here since this button never reloads the page.
+            // Clear it back once this handler has run so Generate ->
+            // Approve -> Delete -> Generate -> Approve -> Delete keeps
+            // working across the same page load.
+            btnDeleteLive.addEventListener('pos-confirmed', function () {
+                fetch(destroyLiveUrl, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                    redirect: 'manual',
+                }).then(() => {
+                    document.getElementById('live-poster-img')?.remove();
+                    document.getElementById('live-poster-wrap').insertAdjacentHTML('beforeend', '<div class="text-muted text-center p-4" id="live-poster-empty"><i class="bi bi-image fs-1 d-block mb-2"></i>{{ __('No poster yet') }}</div>');
+                    btnDownloadLive.classList.add('d-none');
+                    btnDeleteLive.classList.add('d-none');
+                    btnDeleteLive.dataset.confirmed = '';
+                    window.posToast ? window.posToast('{{ __('Live poster deleted.') }}', 'success') : null;
                 });
             });
         })();

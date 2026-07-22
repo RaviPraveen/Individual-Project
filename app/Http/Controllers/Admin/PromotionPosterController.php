@@ -102,6 +102,21 @@ class PromotionPosterController extends Controller
     }
 
     /**
+     * Deletes the LIVE poster (as opposed to discard(), which only clears
+     * an unapproved pending preview) — the promotion reverts to having no
+     * poster until a new one is generated or uploaded.
+     */
+    public function destroyLive(Promotion $promotion): JsonResponse
+    {
+        if ($promotion->poster_path) {
+            Storage::disk('public')->delete($promotion->poster_path);
+            $promotion->update(['poster_path' => null, 'poster_source' => null]);
+        }
+
+        return response()->json(['message' => __('Live poster deleted.')]);
+    }
+
+    /**
      * Deliberately asks for a text-free background — see PosterComposer's
      * class docblock for why real price/title text is composited
      * separately rather than trusted to the image model.

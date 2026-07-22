@@ -65,7 +65,8 @@
       "Bash(php -l app/Services/PromotionAnalytics.php)",
       "Bash(php -l app/Services/PromotionRecommendationService.php)",
       "Bash(php -l app/Http/Controllers/Admin/PromotionAnalyticsController.php)",
-      "Bash(php -l app/Http/Controllers/Admin/DashboardController.php)"
+      "Bash(php -l app/Http/Controllers/Admin/DashboardController.php)",
+      "Bash(node -e ' *)"
     ]
   }
 }

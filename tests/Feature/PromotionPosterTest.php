@@ -56,6 +56,34 @@ class PromotionPosterTest extends TestCase
         $this->actingAs($cashier)->post(route('admin.promotions.poster.generate', $promotion))->assertForbidden();
         $this->actingAs($cashier)->post(route('admin.promotions.poster.approve', $promotion))->assertForbidden();
         $this->actingAs($cashier)->post(route('admin.promotions.poster.discard', $promotion))->assertForbidden();
+        $this->actingAs($cashier)->delete(route('admin.promotions.poster.destroy', $promotion))->assertForbidden();
+    }
+
+    public function test_deleting_the_live_poster_clears_it_and_removes_the_file(): void
+    {
+        Storage::fake('public');
+        $promotion = $this->promotion();
+        $admin = User::whereKey($promotion->created_by)->first();
+
+        $path = 'promotions/live-test.jpg';
+        Storage::disk('public')->put($path, $this->fakeJpegBytes());
+        $promotion->update(['poster_path' => $path, 'poster_source' => 'custom']);
+
+        $response = $this->actingAs($admin)->deleteJson(route('admin.promotions.poster.destroy', $promotion));
+
+        $response->assertOk();
+        Storage::disk('public')->assertMissing($path);
+        $promotion->refresh();
+        $this->assertNull($promotion->poster_path);
+        $this->assertNull($promotion->poster_source);
+    }
+
+    public function test_deleting_when_there_is_no_live_poster_is_a_harmless_no_op(): void
+    {
+        $promotion = $this->promotion();
+        $admin = User::whereKey($promotion->created_by)->first();
+
+        $this->actingAs($admin)->deleteJson(route('admin.promotions.poster.destroy', $promotion))->assertOk();
     }
 
     public function test_generate_composites_a_poster_from_the_ai_background_and_records_history(): void
