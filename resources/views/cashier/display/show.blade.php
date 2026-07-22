@@ -12,103 +12,171 @@
         <link href="{{ asset('css/app.css') }}" rel="stylesheet">
         <style>
             html, body { height: 100%; overflow: hidden; }
-            body { display: flex; color: #fff; }
+            body {
+                display: flex; font-family: 'Manrope', 'Inter', sans-serif; color: var(--pos-ink, #0F172A);
+                background: #F8FAFC;
+            }
 
-            /* ===== LEFT — Customer Bill (40%) ===== */
+            /* Panel widths change with the mode — Promotion Mode is 45/55,
+               Billing Mode (a sale is actively being rung up) is 65/35.
+               Only .cd-left's explicit width ever changes; .cd-right is
+               always flex-grow:1 (never its own basis/grow override) and
+               just fills whatever's left — animating flex-basis on BOTH
+               sides while flex-grow also flips between them produces an
+               unpredictable mid-transition blend in some browsers. */
+            .cd-left { height: 100vh; display: flex; flex-direction: column; flex: 0 0 auto; width: 45%; transition: width 400ms ease; }
+            .cd-right { height: 100vh; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+            body.mode-billing .cd-left { width: 65%; }
+
+            /* ===== LEFT — brand/welcome (Promotion Mode) or live bill (Billing Mode) ===== */
             .cd-left {
-                flex: 0 0 40%; max-width: 40%; height: 100vh; display: flex; flex-direction: column;
-                background: linear-gradient(160deg, var(--pos-brand-dark) 0%, var(--pos-brand) 45%, #0D4E30 100%);
+                background: linear-gradient(160deg, #FFFFFF 0%, #F8FAFC 55%, #EEF6FF 100%);
+                border-right: 1px solid #EEF2F7;
             }
             .cd-header {
                 display: flex; align-items: center; justify-content: center; gap: 12px;
-                padding: 18px 0 10px; flex-shrink: 0;
+                padding: 22px 0 6px; flex-shrink: 0;
             }
             .cd-header .mark {
-                width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,.15);
-                display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+                width: 40px; height: 40px; border-radius: 12px; background: var(--pos-brand-gradient, linear-gradient(135deg,#3B82F6,#2563EB));
+                display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+                box-shadow: 0 6px 16px rgba(59,130,246,.3);
             }
-            .cd-header .name { font-size: 1.3rem; font-weight: 700; letter-spacing: .01em; }
+            .cd-header .name { font-size: 1.25rem; font-weight: 800; letter-spacing: .01em; color: #0F172A; }
             .cd-stage { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
-            .cd-idle { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-            .cd-idle .mark-lg { font-size: 4rem; margin-bottom: 16px; opacity: .95; }
-            .cd-idle h1 { font-size: 1.7rem; font-weight: 700; margin-bottom: 8px; }
-            .cd-idle p.tagline { font-size: 1rem; opacity: .85; margin-bottom: 30px; }
+            /* --- Idle / welcome content (Promotion Mode) --- */
+            .cd-idle { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+            .cd-idle .mark-lg {
+                width: 92px; height: 92px; border-radius: 26px; margin-bottom: 20px; font-size: 2.6rem;
+                display: flex; align-items: center; justify-content: center;
+                background: var(--pos-brand-gradient, linear-gradient(135deg,#3B82F6,#2563EB));
+                box-shadow: 0 10px 26px rgba(59,130,246,.28);
+            }
+            .cd-idle h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; color: #0F172A; }
+            .cd-idle p.tagline { font-size: .95rem; color: #64748B; margin-bottom: 22px; }
             .cd-tip {
-                background: rgba(255,255,255,.12); border-radius: 999px; padding: 10px 22px;
-                font-size: .9rem; display: inline-flex; align-items: center; gap: 10px;
+                background: #EEF6FF; border: 1px solid #DCEBFF; color: #1D4ED8; border-radius: 999px; padding: 10px 22px;
+                font-size: .85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 10px;
                 transition: opacity .4s ease;
             }
+            .cd-store-info {
+                display: flex; gap: 10px; margin-top: 18px; color: #64748B; font-size: .82rem; font-weight: 600;
+            }
+            .cd-store-info span { display: inline-flex; align-items: center; gap: 6px; }
 
-            .cd-bill { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--pos-bg); color: var(--pos-ink); border-radius: 22px 22px 0 0; margin-top: 6px; }
-            .cd-bill-header { padding: 18px 26px 8px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-            .cd-bill-header .customer { font-size: 1rem; font-weight: 600; }
-            .cd-bill-header .points { font-size: .88rem; color: var(--pos-gold-dark); font-weight: 700; }
-            .cd-items { flex: 1; overflow-y: auto; padding: 0 26px; }
-            .cd-item-row { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--pos-border); font-size: 1.02rem; }
-            .cd-item-row .name { font-weight: 600; }
-            .cd-item-row .meta { color: var(--pos-muted); font-size: .85rem; margin-left: 8px; }
-            .cd-item-row .amount { font-weight: 700; font-variant-numeric: tabular-nums; }
-            .cd-summary { flex-shrink: 0; padding: 14px 26px 22px; border-top: 1px solid var(--pos-border); }
-            .cd-summary .row-line { display: flex; justify-content: space-between; font-size: .92rem; color: var(--pos-muted); padding: 2px 0; }
-            .cd-summary .row-total { display: flex; justify-content: space-between; font-size: 1.7rem; font-weight: 800; color: var(--pos-brand-dark); padding-top: 8px; }
+            .cd-offers { width: 100%; max-width: 320px; margin-top: 26px; text-align: left; }
+            .cd-offers .cd-offers-label {
+                text-transform: uppercase; letter-spacing: .08em; font-size: .68rem; font-weight: 800; color: #94A3B8;
+                margin-bottom: 10px; text-align: center;
+            }
+            .cd-offer-row {
+                display: flex; justify-content: space-between; align-items: center; gap: 10px;
+                background: #FFFFFF; border: 1px solid #EEF2F7; border-radius: 12px; padding: 10px 14px; margin-bottom: 8px;
+                box-shadow: 0 1px 2px rgba(15,23,42,.03);
+            }
+            .cd-offer-row .name { font-size: .84rem; font-weight: 700; color: #0F172A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .cd-offer-row .price { font-size: .84rem; font-weight: 800; color: #2563EB; flex-shrink: 0; }
 
-            .cd-thanks { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-            .cd-thanks .check { width: 84px; height: 84px; border-radius: 50%; background: rgba(255,255,255,.15); display: flex; align-items: center; justify-content: center; font-size: 2.6rem; margin-bottom: 16px; }
-            .cd-thanks h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 6px; }
-            .cd-thanks .invoice { opacity: .8; font-size: .85rem; margin-bottom: 20px; font-family: monospace; }
+            /* --- Live bill (Billing Mode) --- */
+            .cd-bill { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+            .cd-bill-header { padding: 18px 30px 10px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+            .cd-bill-header .customer { font-size: 1.15rem; font-weight: 800; color: #0F172A; }
+            .cd-bill-header .points { font-size: .9rem; color: #B45309; font-weight: 700; }
+            .cd-items { flex: 1; overflow-y: auto; padding: 0 30px; }
+            .cd-item-row { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; border-bottom: 1px solid #EEF2F7; font-size: 1.15rem; }
+            .cd-item-row .name { font-weight: 700; color: #0F172A; }
+            .cd-item-row .meta { color: #94A3B8; font-size: .88rem; margin-left: 8px; }
+            .cd-item-row .amount { font-weight: 800; font-variant-numeric: tabular-nums; color: #0F172A; }
+            .cd-summary { flex-shrink: 0; padding: 16px 30px 26px; border-top: 1px solid #EEF2F7; background: #FFFFFF; }
+            .cd-summary .row-line { display: flex; justify-content: space-between; font-size: 1rem; color: #64748B; padding: 3px 0; }
+            .cd-summary .row-line.savings { color: #059669; font-weight: 700; }
+            .cd-summary .row-total {
+                display: flex; justify-content: space-between; align-items: baseline; font-size: 2.1rem; font-weight: 800;
+                color: #0F172A; padding-top: 10px; margin-top: 6px; border-top: 1px dashed #E2E8F0;
+            }
+
+            /* --- Thank you --- */
+            .cd-thanks { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+            .cd-thanks .check {
+                width: 84px; height: 84px; border-radius: 50%; background: #ECFDF5; color: #059669;
+                display: flex; align-items: center; justify-content: center; font-size: 2.6rem; margin-bottom: 18px;
+            }
+            .cd-thanks h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; color: #0F172A; }
+            .cd-thanks .invoice { color: #94A3B8; font-size: .85rem; margin-bottom: 20px; font-family: monospace; }
             .cd-thanks .points-earned {
-                background: var(--pos-gold-light); color: var(--pos-gold-dark); border-radius: 18px;
+                background: #FEF3C7; color: #B45309; border-radius: 18px;
                 padding: 14px 32px; font-size: 1.8rem; font-weight: 800;
             }
-            .cd-thanks .points-note { margin-top: 10px; font-size: .9rem; opacity: .9; }
+            .cd-thanks .points-note { margin-top: 10px; font-size: .9rem; color: #64748B; }
 
             .d-none-cd { display: none !important; }
 
-            /* ===== RIGHT — Promotion Display (60%) ===== */
-            .cd-right { flex: 1; height: 100vh; position: relative; background: #0F172A; overflow: hidden; }
+            /* ===== RIGHT — promotion card ===== */
+            .cd-right { background: #F1F5F9; padding: 28px; align-items: center; justify-content: center; }
+            body.mode-billing .cd-right { padding: 18px; }
 
-            .cd-promo-slide {
-                position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end;
-                opacity: 0; transition: opacity 500ms ease;
+            .cd-promo-card {
+                width: 100%; height: 100%; max-height: 100%; background: #FFFFFF; border-radius: 24px;
+                box-shadow: 0 12px 32px rgba(15,23,42,.08); overflow: hidden; display: flex; flex-direction: column;
+                opacity: 0; transform: scale(.985); transition: opacity 450ms ease, transform 450ms ease;
             }
-            .cd-promo-slide.show { opacity: 1; }
-            .cd-promo-slide img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-            .cd-promo-slide .cd-promo-scrim {
-                position: absolute; inset: 0;
-                background: linear-gradient(to top, rgba(15,23,42,.92) 0%, rgba(15,23,42,.35) 55%, rgba(15,23,42,0) 100%);
-            }
-            .cd-promo-slide .cd-promo-body { position: relative; padding: 56px 64px; }
+            .cd-promo-card.show { opacity: 1; transform: scale(1); }
+
+            .cd-promo-image-wrap { position: relative; flex: 0 0 38%; background: #EEF6FF; overflow: hidden; }
+            .cd-promo-image-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
             .cd-promo-pill {
-                display: inline-flex; align-items: center; gap: 8px; background: var(--pos-gold-light, #FBBF24);
-                color: #0F172A; font-weight: 700; font-size: .95rem; padding: 8px 18px; border-radius: 999px;
-                margin-bottom: 20px; text-transform: uppercase; letter-spacing: .05em;
+                position: absolute; top: 16px; left: 16px;
+                display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.94);
+                color: #0F172A; font-weight: 700; font-size: .72rem; padding: 6px 14px; border-radius: 999px;
+                text-transform: uppercase; letter-spacing: .04em; box-shadow: 0 2px 8px rgba(15,23,42,.12);
             }
-            .cd-promo-title { font-size: 2.6rem; font-weight: 800; line-height: 1.15; margin-bottom: 18px; max-width: 85%; }
-            .cd-promo-desc { font-size: 1.05rem; opacity: .85; margin-bottom: 20px; max-width: 80%; }
-            .cd-promo-prices { display: flex; align-items: baseline; gap: 18px; }
-            .cd-promo-current { font-size: 1.4rem; text-decoration: line-through; opacity: .6; }
-            .cd-promo-offer { font-size: 3rem; font-weight: 800; color: #FBBF24; }
             .cd-promo-discount {
-                background: #EF4444; color: #fff; font-weight: 800; font-size: 1.1rem;
-                padding: 6px 16px; border-radius: 10px; align-self: center;
+                position: absolute; top: 16px; right: 16px;
+                background: #EF4444; color: #fff; font-weight: 800; font-size: 1rem;
+                padding: 8px 14px; border-radius: 12px; box-shadow: 0 4px 12px rgba(239,68,68,.35);
             }
 
+            .cd-promo-body { flex: 1; min-height: 0; padding: 22px 26px; display: flex; flex-direction: column; overflow: hidden; }
+            .cd-promo-title { font-size: 1.5rem; font-weight: 800; line-height: 1.2; color: #0F172A; margin-bottom: 6px; }
+            .cd-promo-desc { font-size: .9rem; color: #64748B; margin-bottom: 14px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+            .cd-promo-prices { display: flex; align-items: baseline; gap: 14px; margin-top: auto; margin-bottom: 14px; }
+            .cd-promo-current { font-size: 1.1rem; text-decoration: line-through; color: #94A3B8; font-weight: 600; }
+            .cd-promo-offer { font-size: 2.1rem; font-weight: 800; color: #2563EB; }
+            .cd-promo-cta {
+                display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+                background: var(--pos-brand-gradient, linear-gradient(135deg,#3B82F6,#2563EB)); color: #fff;
+                font-weight: 700; font-size: .92rem; padding: 12px 20px; border-radius: 12px; text-transform: uppercase;
+                letter-spacing: .04em; box-shadow: 0 6px 16px rgba(59,130,246,.3);
+            }
+
+            .cd-promo-footer {
+                flex-shrink: 0; padding: 12px 26px; border-top: 1px solid #F1F5F9;
+                display: flex; align-items: center; gap: 8px; color: #94A3B8; font-size: .78rem; font-weight: 700;
+            }
+            .cd-promo-footer .mark { width: 20px; height: 20px; border-radius: 6px; background: var(--pos-brand-gradient, linear-gradient(135deg,#3B82F6,#2563EB)); display: inline-flex; align-items: center; justify-content: center; font-size: .7rem; }
+
+            /* Compact card variant used in Billing Mode's narrower column */
+            body.mode-billing .cd-promo-title { font-size: 1.15rem; }
+            body.mode-billing .cd-promo-offer { font-size: 1.6rem; }
+            body.mode-billing .cd-promo-desc { display: none; }
+            body.mode-billing .cd-promo-cta { padding: 10px 16px; font-size: .82rem; }
+            body.mode-billing .cd-promo-body { padding: 18px 20px; }
+
+            /* --- No active promotion --- */
             .cd-promo-empty {
-                position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-                text-align: center; padding: 40px;
-                background: linear-gradient(160deg, var(--pos-brand-dark) 0%, var(--pos-brand) 55%, #0D4E30 100%);
+                width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                text-align: center; padding: 40px; background: #FFFFFF; border-radius: 24px; box-shadow: 0 12px 32px rgba(15,23,42,.06);
             }
-            .cd-promo-empty .mark-lg { font-size: 6rem; margin-bottom: 20px; }
-            .cd-promo-empty h1 { font-size: 2.6rem; font-weight: 800; margin-bottom: 10px; }
-            .cd-promo-empty p.tagline { font-size: 1.2rem; opacity: .85; margin-bottom: 40px; }
-            .cd-promo-empty .cd-announce-row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
-            .cd-promo-empty .cd-announce-card {
-                background: rgba(255,255,255,.1); border-radius: 16px; padding: 20px 26px; min-width: 220px;
+            .cd-promo-empty .mark-lg {
+                width: 88px; height: 88px; border-radius: 24px; margin-bottom: 18px; font-size: 2.4rem;
+                display: flex; align-items: center; justify-content: center;
+                background: var(--pos-brand-gradient, linear-gradient(135deg,#3B82F6,#2563EB));
+                box-shadow: 0 10px 26px rgba(59,130,246,.28);
             }
-            .cd-promo-empty .cd-announce-card .label { text-transform: uppercase; letter-spacing: .08em; font-size: .75rem; opacity: .75; margin-bottom: 6px; }
-            .cd-promo-empty .cd-announce-card .value { font-size: 1.05rem; font-weight: 700; }
-            .cd-promo-empty .cd-thankyou { margin-top: 36px; font-size: 1.1rem; opacity: .85; }
+            .cd-promo-empty h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; color: #0F172A; }
+            .cd-promo-empty p.tagline { font-size: 1rem; color: #64748B; margin-bottom: 28px; }
+            .cd-promo-empty .cd-thankyou { margin-top: 24px; font-size: 1rem; color: #94A3B8; font-weight: 600; }
         </style>
     </head>
     <body>
@@ -127,6 +195,15 @@
                         <i class="bi bi-star-fill"></i>
                         <span id="cd-tip-text"></span>
                     </div>
+                    <div class="cd-store-info">
+                        <span><i class="bi bi-clock"></i> {{ __('7:00 AM – 10:00 PM') }}</span>
+                        <span><i class="bi bi-telephone"></i> {{ __('Open Daily') }}</span>
+                    </div>
+
+                    <div class="cd-offers d-none-cd" id="cd-offers">
+                        <div class="cd-offers-label">{{ __("Today's Offers") }}</div>
+                        <div id="cd-offers-list"></div>
+                    </div>
                 </div>
 
                 <div class="cd-bill d-none-cd" id="cd-bill">
@@ -137,7 +214,7 @@
                     <div class="cd-items" id="cd-items"></div>
                     <div class="cd-summary">
                         <div class="row-line"><span>{{ __('Subtotal') }}</span><span id="cd-subtotal">0.00</span></div>
-                        <div class="row-line" id="cd-discount-row"><span>{{ __('Discount') }}</span><span id="cd-discount">0.00</span></div>
+                        <div class="row-line savings d-none-cd" id="cd-discount-row"><span>{{ __('You Save') }}</span><span id="cd-discount">0.00</span></div>
                         <div class="row-line" id="cd-tax-row"><span>{{ __('Tax') }}</span><span id="cd-tax">0.00</span></div>
                         <div class="row-line" id="cd-bag-fee-row"><span>{{ __('Bag Fee') }}</span><span id="cd-bag-fee">0.00</span></div>
                         <div class="row-total"><span>{{ __('Total') }}</span><span id="cd-total">0.00</span></div>
@@ -157,39 +234,30 @@
         </div>
 
         <div class="cd-right">
-            <div class="cd-promo-slide" id="cd-promo-slide">
-                <img id="cd-promo-image" alt="">
-                <div class="cd-promo-scrim"></div>
+            <div class="cd-promo-card" id="cd-promo-card">
+                <div class="cd-promo-image-wrap">
+                    <img id="cd-promo-image" alt="">
+                    <div class="cd-promo-pill"><i class="bi bi-lightning-charge-fill"></i> {{ __('Limited Offer') }}</div>
+                    <div class="cd-promo-discount" id="cd-promo-discount-badge"></div>
+                </div>
                 <div class="cd-promo-body">
-                    <div class="cd-promo-pill"><i class="bi bi-lightning-charge-fill"></i> {{ __('Limited Offer · Today Only') }}</div>
                     <div class="cd-promo-title" id="cd-promo-title"></div>
-                    <div class="cd-promo-desc d-none-cd" id="cd-promo-desc"></div>
+                    <div class="cd-promo-desc" id="cd-promo-desc"></div>
                     <div class="cd-promo-prices">
                         <span class="cd-promo-current" id="cd-promo-current"></span>
                         <span class="cd-promo-offer" id="cd-promo-offer"></span>
-                        <span class="cd-promo-discount" id="cd-promo-discount"></span>
                     </div>
+                    <div class="cd-promo-cta"><i class="bi bi-cart-plus"></i> {{ __('Buy Now') }}</div>
+                </div>
+                <div class="cd-promo-footer">
+                    <span class="mark">🛒</span> {{ config('app.name') }}
                 </div>
             </div>
 
-            <div class="cd-promo-empty" id="cd-promo-empty">
+            <div class="cd-promo-empty d-none-cd" id="cd-promo-empty">
                 <div class="mark-lg">🛒</div>
                 <h1>{{ __('Welcome to :name', ['name' => config('app.name')]) }}</h1>
                 <p class="tagline">{{ __('Your neighbourhood supermarket in Batticaloa, Sri Lanka') }}</p>
-                <div class="cd-announce-row">
-                    <div class="cd-announce-card">
-                        <div class="label">{{ __('New Arrivals') }}</div>
-                        <div class="value">{{ __('Fresh produce & bakery, every morning') }}</div>
-                    </div>
-                    <div class="cd-announce-card">
-                        <div class="label">{{ __('Store Hours') }}</div>
-                        <div class="value">{{ __('Open Daily · 7:00 AM – 10:00 PM') }}</div>
-                    </div>
-                    <div class="cd-announce-card">
-                        <div class="label">{{ __('Star Points') }}</div>
-                        <div class="value">{{ __('Earn 1 point for every Rs. 100 spent') }}</div>
-                    </div>
-                </div>
                 <div class="cd-thankyou">{{ __('Thank you for shopping with us!') }}</div>
             </div>
         </div>
@@ -228,6 +296,14 @@
 
             function showStage(name) {
                 Object.entries(stages).forEach(([key, el]) => el.classList.toggle('d-none-cd', key !== name));
+            }
+
+            // Billing Mode (wide bill / narrow promo card) is driven purely by
+            // whether a sale is actively being rung up — no backend change
+            // needed, this just reacts to the status the existing poll already
+            // returns.
+            function setMode(mode) {
+                document.body.classList.toggle('mode-billing', mode === 'billing');
             }
 
             function renderActive(state) {
@@ -289,13 +365,48 @@
                 return div.innerHTML;
             }
 
+            // "Thank you" is shown for a fixed 5s regardless of how long the
+            // backend keeps the completed-sale cache entry alive (15s, so
+            // there's a repeat of the SAME invoice on the next couple of
+            // polls) — dedupe by invoice_no so it doesn't restart the timer,
+            // then force Promotion Mode locally once the 5s window is up.
+            let lastCompletedInvoice = null;
+            let thankYouTimer = null;
+
             function poll() {
                 fetch(dataUrl, { headers: { 'Accept': 'application/json' } })
                     .then(r => r.json())
                     .then(state => {
-                        showStage(state.status || 'idle');
-                        if (state.status === 'active') renderActive(state);
-                        if (state.status === 'completed') renderCompleted(state);
+                        const status = state.status || 'idle';
+
+                        if (status === 'completed') {
+                            setMode('billing');
+                            if (state.invoice_no !== lastCompletedInvoice) {
+                                lastCompletedInvoice = state.invoice_no;
+                                showStage('completed');
+                                renderCompleted(state);
+                                clearTimeout(thankYouTimer);
+                                thankYouTimer = setTimeout(() => {
+                                    showStage('idle');
+                                    setMode('promo');
+                                }, 5000);
+                            }
+                            return;
+                        }
+
+                        lastCompletedInvoice = null;
+
+                        if (status === 'active') {
+                            clearTimeout(thankYouTimer);
+                            showStage('active');
+                            renderActive(state);
+                            setMode('billing');
+                            return;
+                        }
+
+                        clearTimeout(thankYouTimer);
+                        showStage('idle');
+                        setMode('promo');
                     })
                     .catch(() => {});
             }
@@ -304,8 +415,10 @@
             setInterval(poll, 1500);
 
             /* ---------- Promotion rotation (right panel) ---------- */
-            const promoSlide = document.getElementById('cd-promo-slide');
+            const promoCard = document.getElementById('cd-promo-card');
             const promoEmpty = document.getElementById('cd-promo-empty');
+            const offersWrap = document.getElementById('cd-offers');
+            const offersList = document.getElementById('cd-offers-list');
             let playlist = [];
             let playIndex = 0;
             let rotateTimer = null;
@@ -322,6 +435,20 @@
                 return list;
             }
 
+            function renderTodaysOffers(promotions) {
+                if (!promotions.length) {
+                    offersWrap.classList.add('d-none-cd');
+                    return;
+                }
+                offersWrap.classList.remove('d-none-cd');
+                offersList.innerHTML = promotions.slice(0, 3).map(p => `
+                    <div class="cd-offer-row">
+                        <span class="name">${escapeHtml(p.title)}</span>
+                        <span class="price">Rs ${Number(p.offer_price).toFixed(0)}</span>
+                    </div>
+                `).join('');
+            }
+
             function markViewed(promo) {
                 fetch(`${viewedUrlBase}/${promo.id}/viewed`, {
                     method: 'POST',
@@ -331,7 +458,7 @@
 
             function showPromo(promo) {
                 promoEmpty.classList.add('d-none-cd');
-                promoSlide.classList.remove('show');
+                promoCard.classList.remove('show');
 
                 setTimeout(() => {
                     document.getElementById('cd-promo-image').src = promo.poster_url || '';
@@ -343,16 +470,19 @@
 
                     document.getElementById('cd-promo-current').textContent = 'Rs ' + Number(promo.current_price).toFixed(2);
                     document.getElementById('cd-promo-offer').textContent = 'Rs ' + Number(promo.offer_price).toFixed(2);
-                    document.getElementById('cd-promo-discount').textContent = '-' + Number(promo.discount_percentage).toFixed(0) + '%';
+                    document.getElementById('cd-promo-discount-badge').textContent = '-' + Number(promo.discount_percentage).toFixed(0) + '%';
 
-                    promoSlide.classList.add('show');
+                    promoCard.classList.add('show');
                     markViewed(promo);
-                }, 400);
+                }, 350);
             }
 
             function showEmptyPromoState() {
-                promoSlide.classList.remove('show');
-                setTimeout(() => promoEmpty.classList.remove('d-none-cd'), 400);
+                promoCard.classList.remove('show');
+                setTimeout(() => {
+                    promoCard.classList.add('d-none-cd');
+                    promoEmpty.classList.remove('d-none-cd');
+                }, 350);
             }
 
             function scheduleNext() {
@@ -363,6 +493,7 @@
                     return;
                 }
 
+                promoCard.classList.remove('d-none-cd');
                 const promo = playlist[playIndex % playlist.length];
                 showPromo(promo);
                 playIndex++;
@@ -373,8 +504,10 @@
                 fetch(promotionsUrl, { headers: { 'Accept': 'application/json' } })
                     .then(r => r.json())
                     .then(data => {
+                        const promotions = data.promotions || [];
                         const wasEmpty = playlist.length === 0;
-                        playlist = buildPlaylist(data.promotions || []);
+                        playlist = buildPlaylist(promotions);
+                        renderTodaysOffers(promotions);
 
                         if (wasEmpty && playlist.length > 0) {
                             playIndex = 0;

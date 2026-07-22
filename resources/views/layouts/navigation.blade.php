@@ -85,10 +85,6 @@
             <a href="{{ route('admin.ai-chat.index') }}" class="btn btn-outline-primary rounded-pill px-3.5 d-none d-sm-inline-flex" style="height:40px; align-items:center;">
                 <i class="bi bi-robot me-1.5"></i> {{ __('AI Insights') }}
             </a>
-        @else
-            <a href="{{ route('cashier.billing.index') }}" class="btn btn-primary rounded-pill px-3.5 d-none d-sm-inline-flex" style="height:40px; align-items:center;">
-                <i class="bi bi-cart-check me-1.5"></i> {{ __('New Billing') }}
-            </a>
         @endif
 
         {{-- Profile Dropdown --}}
