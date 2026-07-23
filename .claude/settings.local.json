@@ -76,7 +76,8 @@
       "Read(//dev/**)",
       "Bash(curl -s -o /tmp/receipt_test.pdf -w \"STATUS:%{http_code} SIZE:%{size_download} TYPE:%{content_type}\\\\n\" \"http://localhost/Individual_Projct/public/cashier/billing/18/receipt/pdf\" -H \"Cookie: $\\(grep -o 'welcome-foodcity-session=[^;]*' /dev/null\\)\")",
       "Bash(file storage/app/public/test-receipt.pdf 2>&1 *)",
-      "Bash(grep -n \"pos-empty\\\\|pos-billing-search\\\\|pos-billing-cart-table\\\\|qty-stepper\\\\|\\\\.p-2\\\\\\\\\\\\\\\\.5\\\\|p-2\\\\.5\\\\|mb-1\\\\.5\\\\|gap-1\\\\.5\\\\|py-2\\\\.5\\\\|mt-2\\\\.5\\\\|shadow-xs\" public/css/app.css)"
+      "Bash(grep -n \"pos-empty\\\\|pos-billing-search\\\\|pos-billing-cart-table\\\\|qty-stepper\\\\|\\\\.p-2\\\\\\\\\\\\\\\\.5\\\\|p-2\\\\.5\\\\|mb-1\\\\.5\\\\|gap-1\\\\.5\\\\|py-2\\\\.5\\\\|mt-2\\\\.5\\\\|shadow-xs\" public/css/app.css)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }
