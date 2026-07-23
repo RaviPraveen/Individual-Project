@@ -385,8 +385,7 @@ small, .text-muted {
 
 .input-group > .form-control,
 .input-group > .form-select,
-.input-group > .input-group-text,
-.input-group > .btn {
+.input-group > .input-group-text {
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
@@ -396,6 +395,23 @@ small, .text-muted {
 .input-group > .input-group-text {
   color: var(--pos-muted);
   font-weight: 500;
+}
+
+/* Any button sits flush against the input (no outer radius), but only
+   icon-only outline/link buttons (camera scan, clear-search, etc.) also
+   lose their border/shadow/background — a solid action button dropped into
+   an input-group (e.g. "Parse", "Find Sale", "Max") must keep its normal
+   .btn-primary background, or its white label text becomes invisible. */
+.input-group > .btn {
+  border-radius: 0 !important;
+}
+
+.input-group > .btn-link,
+.input-group > .btn-outline-primary,
+.input-group > .btn-outline-secondary {
+  border: none !important;
+  box-shadow: none !important;
+  background-color: transparent;
 }
 
 /* Subtle divider between an icon/text prefix|suffix and the input itself */
@@ -458,6 +474,43 @@ small, .text-muted {
   border: 1px solid var(--pos-gold-border);
   border-radius: 12px;
   box-shadow: var(--pos-shadow-xs);
+}
+
+/* ---------- Empty States (<x-empty-state>, used across ~30 admin/POS
+   pages — tables, dashboards, the shopping cart) — classes existed in the
+   component markup with no matching rules anywhere, so every empty state
+   in the app rendered as unstyled stacked text instead of this. ---------- */
+.pos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+.pos-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--pos-surface-2);
+  color: var(--pos-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+}
+.pos-empty-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--pos-heading);
+  margin-bottom: 0.25rem;
+}
+.pos-empty-text {
+  color: var(--pos-muted);
+  font-size: 13px;
+  max-width: 380px;
 }
 
 /* ---------- App Shell & Fixed 280px Sidebar ---------- */
