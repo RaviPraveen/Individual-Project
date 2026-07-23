@@ -868,6 +868,22 @@ small, .text-muted {
   z-index: 1;
 }
 
+/* POS product/customer search results — a bounded, scrollable dropdown
+   (rather than unbounded height) so a broad match with many rows never
+   grows past the viewport, and arrow-key/hover auto-scroll
+   (scrollIntoView) always scrolls this box instead of the whole page. A
+   quick fade-in avoids the hard instant snap when the row count changes
+   between keystrokes, which otherwise reads as the box "jumping". */
+.pos-search-dropdown {
+  border: 1px solid var(--pos-border);
+}
+.pos-search-dropdown:empty {
+  display: none;
+}
+.pos-search-dropdown > * {
+  animation: pos-scan-fade-in 0.12s ease-out;
+}
+
 /* ==========================================================================
    AI Copilot Chat (ChatGPT/Claude-style two-pane interface)
    Renders inside <x-admin-layout>/<x-cashier-layout>'s .pos-main, so it's

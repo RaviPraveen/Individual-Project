@@ -77,7 +77,7 @@
                                 <i class="bi bi-camera-fill"></i>
                             </button>
                         </div>
-                        <div id="product-results" class="list-group position-absolute w-100 shadow-lg border-0 rounded-3 overflow-hidden mt-1" style="z-index: 1050; left:0; right:0;"></div>
+                        <div id="product-results" class="list-group position-absolute w-100 shadow-lg rounded-3 mt-1 pos-search-dropdown" style="z-index: 1050; left:0; right:0; max-height: 320px; overflow-y: auto;"></div>
                     </div>
                 </div>
 
@@ -133,7 +133,7 @@
                             </label>
                             <div class="position-relative">
                                 <input type="text" id="customer-search" class="form-control" autocomplete="off" placeholder="{{ __('Enter phone number...') }}">
-                                <div id="customer-results" class="list-group position-absolute w-100 shadow-lg rounded-3 overflow-hidden" style="z-index: 1050;"></div>
+                                <div id="customer-results" class="list-group position-absolute w-100 shadow-lg rounded-3 pos-search-dropdown" style="z-index: 1050; max-height: 280px; overflow-y: auto;"></div>
                             </div>
 
                             <!-- Selected Customer Panel -->
@@ -345,7 +345,7 @@
 
         productSearchInput.addEventListener('input', (e) => {
             productSearchClearBtn.classList.toggle('d-none', !e.target.value);
-            debounce((term) => searchProducts(term), 250)(e.target.value);
+            debounce((term) => searchProducts(term), 120)(e.target.value);
         });
 
         productSearchClearBtn.addEventListener('click', () => {
