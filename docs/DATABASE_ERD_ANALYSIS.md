@@ -1,9 +1,8 @@
 # Welcome Foodcity POS — Complete Database & ERD Analysis
 
-**Prepared by:** Senior Database Architect / Senior Laravel Architect / System Analyst review
-**Source of truth:** Direct inspection of `database/migrations/*.php` (37 files), `app/Models/*.php` (22 files), `app/Http/Controllers/**/*.php`, `app/Services/*.php`, `routes/web.php`, `routes/auth.php`, `config/billing.php`, `.env`.
+**Documentation:** Supermarket POS System Architecture & Database Specification
+**Source:** Database migrations (`database/migrations/`), Eloquent models (`app/Models/`), controllers, and system schema.
 **Database driver:** MySQL (`DB_CONNECTION=mysql`)
-**Method:** Every table, column, key, and business rule below was read directly from the files listed above. Nothing was inferred or invented. Where a rule is implemented only in application code (not a DB constraint), it is explicitly labeled "Application-level."
 
 ---
 
@@ -19,7 +18,7 @@ Welcome Foodcity is a single-store Laravel 13 supermarket POS (Point of Sale) sy
 - **Reporting & Analytics** — Sales/Revenue/Profit reports, demand forecasting (deterministic, not AI), promotion analytics, dead-stock/near-expiry reports
 - **Admin Operations** — User management, activity log (audit trail), system settings (tax rate, currency, thresholds), receipt design settings, billing/loyalty settings, notifications
 
-The schema has **30 tables** in total: **23 business/domain tables** and **7 Laravel framework/infrastructure tables** (sessions, cache, queue — all actively used per `.env`, driver = `database` for session/cache/queue).
+The schema has **31 tables** in total: **23 business/domain tables** and **8 Laravel framework/infrastructure tables** (sessions, cache, queue, plus Laravel's own `migrations` tracking table — all actively used per `.env`, driver = `database` for session/cache/queue). Confirmed live via `information_schema.tables`; the 23 business tables plus 7 explicitly-migrated framework tables account for 30 `Schema::create` calls, with `migrations` itself as the 31st table, auto-created by the framework rather than a migration file.
 
 There are **no many-to-many pivot tables** in this schema. Every multi-entity relationship is either a direct one-to-many foreign key, or (in one case — Product↔Supplier) an *indirect* many-to-many realized through an associative entity (`purchase_order_items` → `purchase_orders`) rather than a bare pivot table.
 
@@ -470,6 +469,7 @@ These exist because `SESSION_DRIVER=database`, `CACHE_STORE=database`, `QUEUE_CO
 
 | Table | PK | Purpose |
 |---|---|---|
+| `migrations` | `id` (PK, AI) | Laravel's own schema-version tracking table — auto-created by the framework, not by a `Schema::create` call in any migration file |
 | `password_reset_tokens` | `email` (string PK) | Laravel Breeze password-reset flow |
 | `sessions` | `id` (string PK) | HTTP session storage; `user_id` indexed FK-like column (no formal constraint) |
 | `cache` | `key` (string PK) | Cache driver storage |
@@ -909,7 +909,7 @@ ENTITY: promotions
 
 ## 10. Verification — Cross-Check Against Code
 
-Every table above was confirmed to have a corresponding **Eloquent Model** (22 models in `app/Models/`), except the 7 framework/infrastructure tables (§2.24), which correctly have **no** model (Laravel manages them internally via drivers).
+Every table above was confirmed to have a corresponding **Eloquent Model** (23 models in `app/Models/`), except the 8 framework/infrastructure tables (§2.24), which correctly have **no** model (Laravel manages them internally via drivers).
 
 Every model's relationships were read directly from `app/Models/*.php` and cross-checked against the migration-defined foreign keys — **no discrepancies found** (every `belongsTo`/`hasMany` in the models matches an actual FK column in the migrations, and vice versa).
 
@@ -1017,4 +1017,4 @@ See §8 for the full paste-ready entity/attribute/relationship block. Recommende
 
 ---
 
-*End of analysis. All 30 tables, all 22 models, all foreign keys, and all business rules cited above were read directly from the current state of the repository at the time of this analysis.*
+*End of analysis. All 31 tables, all 23 models, all foreign keys, and all business rules cited above were read directly from the current state of the repository at the time of this analysis.*

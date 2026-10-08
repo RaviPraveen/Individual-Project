@@ -192,12 +192,7 @@ class RevenueController extends Controller
     }
 
     /**
-     * Revenue/cost/profit/margin for a date range, plus the percentage
-     * change and up/down trend versus a comparison (previous-equivalent)
-     * range. Revenue here is product revenue (SUM of sale_items.line_total)
-     * rather than Sale::total, so that revenue - cost = profit holds exactly
-     * — Sale::total includes tax and bag fee, neither of which has a
-     * per-product cost to net against.
+     * Calculate revenue totals and comparison percentage
      */
     private function comparedTotals(Carbon $start, Carbon $end, Carbon $prevStart, Carbon $prevEnd): array
     {
@@ -240,9 +235,7 @@ class RevenueController extends Controller
     }
 
     /**
-     * Grouped by DATE() (portable across MySQL and the SQLite test driver)
-     * rather than DATE_FORMAT('%Y-%m'), which SQLite doesn't support — then
-     * rolled up into months in PHP.
+     * Calculate monthly revenue trend for past 12 months
      */
     private function monthlyTrend(): array
     {

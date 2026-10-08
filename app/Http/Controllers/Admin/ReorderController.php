@@ -16,7 +16,7 @@ class ReorderController extends Controller
 {
     public function __construct(
         private ForecastService $forecastService,
-        private AiService $gemini,
+        private AiService $aiService,
         private ProductSupplierResolver $supplierResolver,
     ) {}
 
@@ -39,14 +39,12 @@ class ReorderController extends Controller
             'suggestions' => $suggestions,
             'suppliers' => Supplier::orderBy('name')->get(),
             'narrative' => $this->narrative($request, $suggestions),
-            'geminiConfigured' => $this->gemini->isConfigured(),
+            'geminiConfigured' => $this->aiService->isConfigured(),
         ]);
     }
 
     /**
-     * Cached briefly so repeated visits don't re-call the AI service. See
-     * DashboardController::businessSummary() for why a null narrative is
-     * cached as '' rather than a literal null.
+     * Cache the reorder recommendation narrative for 30 minutes to minimize API calls.
      */
     private function narrative(Request $request, $suggestions): ?string
     {
@@ -65,7 +63,7 @@ class ReorderController extends Controller
                 'purchasing recommendation: which products are most urgent to reorder and roughly why. '.
                 "Do not invent any numbers beyond what is given.\n\n{$list}";
 
-            $narrative = $this->gemini->generate($prompt);
+            $narrative = $this->aiService->generate($prompt);
 
             AiLog::create([
                 'user_id' => $request->user()->id,

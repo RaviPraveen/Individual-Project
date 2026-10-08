@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\DB;
 class ForecastService
 {
     /**
-     * Deterministic weekly-average forecast for every active product.
-     * The number here is never produced by AI — it is a plain historical
-     * average, projected forward. AI is only used later to narrate it.
+     * Calculate weekly average sales forecast for active products based on history.
      */
     public function forecastAll(int $lookbackWeeks = 8): Collection
     {

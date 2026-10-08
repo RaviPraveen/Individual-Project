@@ -49,8 +49,7 @@ class CoreWorkflowTest extends TestCase
         return $po->fresh('items');
     }
 
-    // ─── Billing: success path ──────────────────────────────────────────────
-
+    // Billing: success path
     public function test_billing_completes_a_sale_and_decrements_stock(): void
     {
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
@@ -91,8 +90,7 @@ class CoreWorkflowTest extends TestCase
         ]);
     }
 
-    // ─── Billing: rollback on insufficient stock ────────────────────────────
-
+    // Billing: rollback on insufficient stock
     public function test_billing_rolls_back_the_whole_sale_when_stock_is_insufficient(): void
     {
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
@@ -137,8 +135,7 @@ class CoreWorkflowTest extends TestCase
         $this->assertDatabaseCount('sales', 0);
     }
 
-    // ─── Purchase order: receipt restocking + locking ───────────────────────
-
+    // Purchase order: receipt restocking and locking
     public function test_marking_a_purchase_order_received_restocks_products(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
@@ -196,8 +193,7 @@ class CoreWorkflowTest extends TestCase
         $this->assertEquals($startingStock, $product->fresh()->stock_qty);
     }
 
-    // ─── Role middleware: 403s for both roles ───────────────────────────────
-
+    // Role middleware: 403s for unauthorized roles
     public function test_cashier_is_forbidden_from_admin_only_routes(): void
     {
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
@@ -232,8 +228,7 @@ class CoreWorkflowTest extends TestCase
         $this->get(route('cashier.billing.index'))->assertRedirect(route('login'));
     }
 
-    // ─── New modules: activity log, settings, notifications, near-expiry ───
-
+    // Activity log, settings, notifications, near-expiry tests
     public function test_activity_log_records_a_sale_and_is_visible_to_admin(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);

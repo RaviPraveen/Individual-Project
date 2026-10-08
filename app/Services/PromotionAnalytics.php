@@ -7,13 +7,7 @@ use App\Models\SaleItem;
 use Illuminate\Support\Collection;
 
 /**
- * There's no per-customer tracking on the Customer Display (it's a shared
- * screen, not a login), so "Views" and "Estimated Reach" are both derived
- * from the same display_count counter (incremented once per rotation turn
- * — see CustomerDisplayController::markPromotionViewed()) rather than
- * being independently measured signals. Conversion Rate is a rough
- * display-to-sale proxy for the same reason: a display doesn't map to a
- * specific customer visit, so treat it as directional, not exact.
+ * Calculates performance metrics and conversion estimates for active promotions.
  */
 class PromotionAnalytics
 {

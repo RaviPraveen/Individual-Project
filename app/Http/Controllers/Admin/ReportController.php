@@ -257,10 +257,7 @@ class ReportController extends Controller
     }
 
     /**
-     * Total quantity sold per product within the window, for ALL products
-     * with any sales activity (not just the ones ending up in a given
-     * report) — reuses the same sale_items/sales join idiom as byProduct(),
-     * just without the products join since only the id is needed here.
+     * Map total sales quantity per product within the given date window
      */
     private function slowMovingSalesMap(Carbon $start, Carbon $end): array
     {
@@ -274,10 +271,8 @@ class ReportController extends Controller
     }
 
     /**
-     * Same shape as profitNarrative()/ReorderController's narrative(): cached
-     * per 30-minute bucket, logs to ai_logs, and degrades to null (rendered
-     * as "AI summary unavailable" in the view) if the AI service can't
-     * produce a narrative.
+     * Generate an AI summary for slow-moving/dead stock products,
+     * cached for 30 minutes to avoid redundant API calls.
      */
     private function deadStockNarrative(Request $request, $rows): ?string
     {

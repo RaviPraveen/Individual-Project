@@ -196,9 +196,7 @@ class PromotionPosterController extends Controller
     }
 
     /**
-     * Deliberately asks for a text-free background — see PosterComposer's
-     * class docblock for why real price/title text is composited
-     * separately rather than trusted to the image model.
+     * Builds the prompt used for generating the poster background image.
      */
     private function buildPrompt(?Product $product): string
     {

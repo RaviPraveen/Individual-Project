@@ -17,7 +17,7 @@ use Illuminate\View\View;
 class AiChatController extends Controller
 {
     public function __construct(
-        private AiService $gemini,
+        private AiService $aiService,
         private ForecastService $forecastService,
     ) {}
 
@@ -39,7 +39,7 @@ class AiChatController extends Controller
             'conversationGroups' => $this->groupConversations($conversations),
             'activeConversation' => $active,
             'messages' => $messages,
-            'geminiConfigured' => $this->gemini->isConfigured(),
+            'geminiConfigured' => $this->aiService->isConfigured(),
             'suggestions' => $this->suggestionChips($isAdmin),
         ]);
     }
@@ -64,7 +64,7 @@ class AiChatController extends Controller
             "(headings, bold, lists, tables) where it helps readability. If the question cannot be answered ".
             "from this data, say so plainly.\n\nDATA:\n{$context}\n\nSTAFF QUESTION: {$validated['message']}";
 
-        $answer = $this->gemini->generate($prompt);
+        $answer = $this->aiService->generate($prompt);
         $widget = $this->buildWidget($validated['message'], $isAdmin);
 
         $log = AiLog::create([
@@ -219,11 +219,8 @@ class AiChatController extends Controller
     }
 
     /**
-     * Detects which (if any) real, deterministically-computed widget to show
-     * alongside the AI's narrative answer. Never derived from the AI's own
-     * text — the widget data is computed straight from the database, the
-     * same "AI narrates real numbers, never invents them" principle used
-     * everywhere else in this app.
+     * Determines whether to display a database-driven statistical widget
+     * alongside the AI assistant response based on message content.
      */
     private function buildWidget(string $message, bool $isAdmin): ?array
     {

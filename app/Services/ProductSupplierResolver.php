@@ -5,9 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Resolves the most recent supplier a product was ordered from, based on
- * purchase order history. Informational only — callers still let the admin
- * choose the supplier explicitly wherever this feeds a form.
+ * Resolves the most recent supplier for products based on purchase orders.
  */
 class ProductSupplierResolver
 {

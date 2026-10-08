@@ -1,58 +1,129 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Welcome Foodcity — Supermarket POS & Inventory Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A web-based Point of Sale (POS) and inventory management system designed for retail supermarkets, built using Laravel, MySQL, and modern web technologies.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 1. Project Overview
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Welcome Foodcity POS is an individual final-year software engineering project developed to address inventory tracking, cashier checkout efficiency, sales reporting, and customer loyalty retention for a retail supermarket.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+The application provides dual-role access control (Cashier and Administrator) with comprehensive transactional safety, real-time stock updates, and decision-support analytics.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 2. Key System Features & Modules
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Point of Sale (POS) & Billing
+- **Fast Barcode & Search Billing:** Real-time search and barcode scanning for rapid checkout.
+- **Multiple Payment Methods:** Support for cash, credit/debit card, and customer loyalty point redemptions.
+- **Receipt Printing & Digital Records:** Printable POS receipt formats and thermal bill layouts.
+- **Dual Screen / Customer Display:** Real-time customer-facing monitor feed showing active cart totals.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### Inventory & Stock Control
+- **Product & Category Management:** Hierarchical categorization, SKU/barcode assignment, cost vs. retail pricing.
+- **Low Stock & Expiry Alerts:** Proactive tracking of near-expiry batches and reorder thresholds.
+- **Purchase Orders & Stock Movements:** Complete supplier procurement lifecycle with verified stock receipts.
+- **Supplier Returns:** Audit trail for damaged or returned goods back to vendors.
 
-## Agentic Development
+### Customer Loyalty Program
+- **Star Points System:** Automated loyalty points accumulation based on configurable purchase thresholds.
+- **Redemption & Balance Tracking:** In-store redemption applied directly as a discount on bills.
+- **Email Notifications:** Automatic receipt and star points statements sent to registered customers.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### Refunds & Returns Management
+- **Audit-Controlled Returns:** Return processing against validated past invoices.
+- **Automatic Stock Restoration:** Returned items automatically restocked to inventory with ledger verification.
 
+### Analytics, Reports & Forecasting
+- **Sales & Financial Reports:** Daily, weekly, monthly sales breakdown, gross margins, and category revenue.
+- **Demand Forecasting:** Deterministic trend and moving-average forecasting for stock demand.
+- **Decision Support Assistant:** Context-aware store assistance for inventory queries and summary reports.
+- **Promotional Signage:** Visual poster composer and customer signage feed.
+
+---
+
+## 3. Technology Stack
+
+- **Backend Framework:** Laravel 13 (PHP 8.2+)
+- **Database:** MySQL
+- **Frontend / Presentation:** Blade templates, HTML5, CSS3, Vanilla JavaScript, Bootstrap
+- **PDF Generation:** DomPDF / Barryvdh Laravel-DomPDF
+- **Testing:** PHPUnit / Laravel Test Suite (Feature & Unit tests)
+
+---
+
+## 4. Database Schema & Architecture
+
+The database schema consists of 23 domain entities:
+- **Core Entities:** `users`, `categories`, `products`, `suppliers`, `customers`
+- **Transactions:** `sales`, `sale_items`, `sale_returns`, `sale_return_items`
+- **Procurement & Inventory:** `purchase_orders`, `purchase_order_items`, `stock_movements`, `supplier_returns`
+- **Loyalty & Settings:** `loyalty_transactions`, `billing_settings`, `settings`, `receipt_settings`
+- **Promotions & Assistant:** `promotions`, `ai_chat_conversations`, `ai_chat_messages`, `activity_logs`
+
+---
+
+## 5. Installation & Setup Guide
+
+### Prerequisites
+- PHP 8.2 or higher
+- Composer
+- MySQL (via XAMPP, WAMP, or standalone)
+- Apache Web Server
+
+### Step 1: Environment Setup
+Clone or place the project files into your web root (e.g., `c:\xampp\htdocs\Individual_Projct`):
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+cp .env.example .env
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Step 2: Configure Environment Variables
+Edit your `.env` file with your MySQL database credentials:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=welcome_foodcity
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-## Contributing
+### Step 3: Install Dependencies
+```bash
+composer install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Step 4: Run Migrations and Seeders
+```bash
+php artisan key:generate
+php artisan migrate --seed
+```
 
-## Code of Conduct
+### Step 5: Start the Application
+Run the built-in development server or access through your local Apache server:
+```bash
+php artisan serve
+```
+The application will be accessible at `http://localhost:8000`.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 6. Automated Testing
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+The project includes automated feature and unit tests covering authentication, checkout workflows, inventory movements, return calculations, and role-based permissions.
 
-## License
+Run the test suite using:
+```bash
+php artisan test
+```
+All tests use an in-memory SQLite database configuration to ensure fast, isolated test execution without modifying live MySQL data.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+
+## 7. User Roles & Default Accounts
+
+| Role | Default Email | Default Password | Permissions |
+| :--- | :--- | :--- | :--- |
+| **Administrator** | `admin@foodcity.lk` | `password` | Full system access, stock, reports, settings |
+| **Cashier** | `cashier@foodcity.lk` | `password` | POS terminal billing, receipts, customer lookups |

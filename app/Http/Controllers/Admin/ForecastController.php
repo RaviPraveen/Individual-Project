@@ -14,7 +14,7 @@ class ForecastController extends Controller
 {
     public function __construct(
         private ForecastService $forecastService,
-        private AiService $gemini,
+        private AiService $aiService,
     ) {}
 
     public function index(): View
@@ -42,7 +42,7 @@ class ForecastController extends Controller
             "Projected stock after 30 days: {$forecast['projected_stock_30d']}\n".
             "Recommended reorder quantity: {$forecast['recommended_reorder_qty']}";
 
-        $narrative = $this->gemini->generate($prompt);
+        $narrative = $this->aiService->generate($prompt);
 
         AiLog::create([
             'user_id' => $request->user()->id,

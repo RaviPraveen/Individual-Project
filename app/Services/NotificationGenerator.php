@@ -8,20 +8,13 @@ use App\Models\PurchaseOrder;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Scans for alert-worthy conditions (low stock, stale pending POs, near-expiry
- * stock) and writes a notifications row for anything not already flagged in
- * the last day. The 24h de-dupe window (rather than "skip while any row,
- * read or unread, exists") is what makes mark-as-read actually mean
- * something: an acknowledged alert stays gone until the next day, but a
- * still-unresolved problem does resurface instead of being silenced forever.
+ * Checks system conditions and generates notifications for low stock, pending POs, and expiry dates.
  */
 class NotificationGenerator
 {
     public function generate(): void
     {
-        // Cheap external throttle so this doesn't re-run its queries on every
-        // single page load — once every 10 minutes is plenty for alerts that
-        // are inherently day-scale (stock levels, PO age, expiry dates).
+        // Cache check to avoid running queries on every request
         Cache::remember('notification_generator_last_run', now()->addMinutes(10), function () {
             $this->generateLowStock();
             $this->generatePendingPurchaseOrders();

@@ -29,7 +29,7 @@ use Throwable;
 
 class BillingController extends Controller
 {
-    public function index(AiService $gemini): View
+    public function index(AiService $aiService): View
     {
         $billingSettings = BillingSetting::current();
 
@@ -39,7 +39,7 @@ class BillingController extends Controller
             'pointsRedeemValue' => (float) $billingSettings->points_redeem_value,
             'pointsEarnPercent' => $billingSettings->earnPercent(),
             'bagFee' => (float) $billingSettings->bag_fee,
-            'geminiConfigured' => $gemini->isConfigured(),
+            'geminiConfigured' => $aiService->isConfigured(),
         ]);
     }
 
@@ -112,8 +112,7 @@ class BillingController extends Controller
                 $taxAmount = round(($subtotal - $discountAmount) * $taxPercent / 100, 2);
                 $totalBeforePoints = $subtotal - $discountAmount + $taxAmount;
 
-                // Redeem first, capped by the customer's balance and by the bill itself
-                // (a bill can never go negative), then earn on the amount actually paid.
+                // Calculate points redemption
                 $redeemValuePerPoint = (float) $billingSettings->points_redeem_value;
                 $pointsRequested = (int) ($validated['points_to_redeem'] ?? 0);
                 $pointsRequested = $customer ? min($pointsRequested, $customer->points_balance) : 0;
@@ -126,11 +125,7 @@ class BillingController extends Controller
                 $pointsEarnPercent = $billingSettings->earnPercent();
                 $pointsEarned = $customer ? (int) floor($total * $pointsEarnPercent / 100) : 0;
 
-                // Bag fee is a flat per-transaction charge — not part of the
-                // merchandise subtotal, not discounted, not taxed, and not
-                // counted toward star points (which are earned on the amount
-                // paid for goods, not on service fees). Added after points
-                // are calculated so it never affects the earn rate.
+                // Add bag fee if requested
                 $bagFee = $request->boolean('wants_bag') ? (float) $billingSettings->bag_fee : 0;
                 $total += $bagFee;
 
@@ -240,7 +235,7 @@ class BillingController extends Controller
         return redirect()->route('cashier.billing.receipt', $sale)->with('success', 'Sale completed.');
     }
 
-    public function upsellSuggestion(Request $request, AiService $gemini): JsonResponse
+    public function upsellSuggestion(Request $request, AiService $aiService): JsonResponse
     {
         $validated = $request->validate([
             'customer_id' => ['required', 'exists:customers,id'],
@@ -248,7 +243,7 @@ class BillingController extends Controller
             'cart_items.*' => ['string', 'max:255'],
         ]);
 
-        if (! $gemini->isConfigured()) {
+        if (! $aiService->isConfigured()) {
             return response()->json(['suggestion' => null]);
         }
 
@@ -279,7 +274,7 @@ class BillingController extends Controller
             "Customer's usual purchases: {$history}\n".
             "In today's cart already: {$cartList}";
 
-        $suggestion = $gemini->generate($prompt);
+        $suggestion = $aiService->generate($prompt);
 
         if ($suggestion === null || strtoupper(trim($suggestion)) === 'NONE') {
             return response()->json(['suggestion' => null]);
@@ -301,13 +296,13 @@ class BillingController extends Controller
      * products — anything not confidently matched in the catalog is
      * dropped rather than guessed.
      */
-    public function parseOrderText(Request $request, AiService $gemini): JsonResponse
+    public function parseOrderText(Request $request, AiService $aiService): JsonResponse
     {
         $validated = $request->validate([
             'text' => ['required', 'string', 'max:500'],
         ]);
 
-        if (! $gemini->isConfigured()) {
+        if (! $aiService->isConfigured()) {
             return response()->json(['configured' => false, 'items' => []]);
         }
 
@@ -323,7 +318,7 @@ class BillingController extends Controller
             "CATALOG:\n{$catalog}\n\n".
             "ORDER TEXT: \"{$validated['text']}\"";
 
-        $raw = $gemini->generate($prompt);
+        $raw = $aiService->generate($prompt);
 
         AiLog::create([
             'user_id' => $request->user()->id,
@@ -424,10 +419,15 @@ class BillingController extends Controller
     private function generateInvoiceNumber(): string
     {
         $prefix = 'INV-'.now()->format('Ymd').'-';
+        $lastInvoice = Sale::where('invoice_no', 'like', $prefix.'%')
+            ->orderByDesc('id')
+            ->value('invoice_no');
+
+        $sequence = $lastInvoice ? ((int) substr($lastInvoice, -4)) + 1 : 1;
 
         do {
-            $sequence = Sale::where('invoice_no', 'like', $prefix.'%')->count() + 1;
             $candidate = $prefix.str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $sequence++;
         } while (Sale::where('invoice_no', $candidate)->exists());
 
         return $candidate;

@@ -9,11 +9,8 @@ use App\Models\SaleItem;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Same narrative-with-fallback shape as ReportController's dead-stock/profit
- * narratives: compute real signals in PHP first (nothing here is invented
- * by the model), then ask the AI to phrase them as short recommendations.
- * Falls back to the plain computed bullet list if the AI is unconfigured
- * or unreachable, so the panel is never empty just because AI is down.
+ * Generates promotion recommendations based on slow-moving products and sales trends,
+ * with optional AI-assisted summary phrasing and fallback to computed signals.
  */
 class PromotionRecommendationService
 {

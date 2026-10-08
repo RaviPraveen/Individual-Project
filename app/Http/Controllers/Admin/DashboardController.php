@@ -18,7 +18,7 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __construct(private AiService $gemini) {}
+    public function __construct(private AiService $aiService) {}
 
     public function index(Request $request, PromotionAnalytics $promotionAnalytics): View
     {
@@ -51,7 +51,7 @@ class DashboardController extends Controller
             'stats' => $stats,
             'topCategory' => $topCategory,
             'summary' => $this->businessSummary($request, $stats, $topCategory),
-            'geminiConfigured' => $this->gemini->isConfigured(),
+            'geminiConfigured' => $this->aiService->isConfigured(),
             'salesTrend' => $this->salesTrend(),
             'categoryBreakdown' => $this->categoryBreakdown(),
             'promotions' => $promotionAnalytics->dashboardSummary(),
@@ -98,13 +98,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Cached per half-hour so a busy dashboard doesn't re-call the AI service
-     * (or write a fresh ai_logs row) on every single page load.
-     *
-     * Cache::remember() can't tell "cached null" apart from "cache miss" — it
-     * re-runs the callback forever if the value is null, which it always is
-     * while the AI service is unconfigured. Cache an empty string as the "no
-     * narrative" sentinel instead, and translate it back to null for the view.
+     * Cache the dashboard business summary narrative for 30 minutes to reduce API usage.
      */
     private function businessSummary(Request $request, array $stats, $topCategory): ?string
     {
@@ -122,7 +116,7 @@ class DashboardController extends Controller
                 "Total suppliers: {$stats['suppliers']}, total customers: {$stats['customers']}\n".
                 "Refunds this month: {$stats['refunds_month_total']}";
 
-            $narrative = $this->gemini->generate($prompt);
+            $narrative = $this->aiService->generate($prompt);
 
             AiLog::create([
                 'user_id' => $request->user()->id,

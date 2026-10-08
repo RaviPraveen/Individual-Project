@@ -155,11 +155,7 @@ class ReturnController extends Controller
                     ];
                 }
 
-                // Claw back a proportional share of points earned on the returned
-                // portion — the customer can't keep loyalty points for merchandise
-                // they no longer own. Redeemed points are deliberately NOT restored:
-                // once spent, they are treated the same as a non-refundable reward,
-                // consistent with most real loyalty programs.
+                // Deduct proportional loyalty points for returned items
                 $pointsClawedBack = 0;
                 $customerBalanceAfter = null;
 
@@ -249,10 +245,15 @@ class ReturnController extends Controller
     private function generateReturnNumber(): string
     {
         $prefix = 'RET-'.now()->format('Ymd').'-';
+        $lastReturn = SaleReturn::where('return_no', 'like', $prefix.'%')
+            ->orderByDesc('id')
+            ->value('return_no');
+
+        $sequence = $lastReturn ? ((int) substr($lastReturn, -4)) + 1 : 1;
 
         do {
-            $sequence = SaleReturn::where('return_no', 'like', $prefix.'%')->count() + 1;
             $candidate = $prefix.str_pad($sequence, 4, '0', STR_PAD_LEFT);
+            $sequence++;
         } while (SaleReturn::where('return_no', $candidate)->exists());
 
         return $candidate;

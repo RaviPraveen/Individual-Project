@@ -61,7 +61,7 @@ class CustomerController extends Controller
         return redirect()->route('admin.customers.index')->with('success', 'Customer deleted.');
     }
 
-    public function behavior(Request $request, Customer $customer, AiService $gemini): View
+    public function behavior(Request $request, Customer $customer, AiService $aiService): View
     {
         $totalOrders = $customer->sales()->count();
         $totalSpend = (float) $customer->sales()->sum('total');
@@ -105,7 +105,7 @@ class CustomerController extends Controller
                 "Last purchase: {$lastPurchase}\n".
                 "Top categories purchased: {$categoryList}";
 
-            $narrative = $gemini->generate($prompt);
+            $narrative = $aiService->generate($prompt);
 
             AiLog::create([
                 'user_id' => $request->user()->id,

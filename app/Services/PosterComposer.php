@@ -6,13 +6,8 @@ use App\Models\Promotion;
 use GdImage;
 
 /**
- * Turns an AI-generated background (asked for a text-free product/brand
- * scene — see PromotionController::buildPosterPrompt()) into a finished
- * promotional poster by compositing the real title/price/discount text
- * with GD. Diffusion models render prices and short marketing copy
- * unreliably (garbled digits, misspellings), which is unacceptable for a
- * real price tag — so every number and word visible on the poster comes
- * from this class, not the model.
+ * Composes promotional posters using PHP GD by overlaying product details,
+ * discount badges, and price information onto background images.
  */
 class PosterComposer
 {
@@ -83,9 +78,7 @@ class PosterComposer
     }
 
     /**
-     * Used when the AI call fails (unconfigured, timeout, model error) so
-     * "Generate Again" always produces something rather than a hard error —
-     * a brand-blue gradient stands in for the missing product photography.
+     * Fallback gradient background when background image is unavailable
      */
     private function fallbackBackground(): GdImage
     {

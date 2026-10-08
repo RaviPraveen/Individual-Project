@@ -38,7 +38,7 @@
                 <div style="font-size:13px; color:#667169;">star points on this purchase</div>
                 <div style="margin-top:10px; padding-top:10px; border-top:1px solid #EEDDB8; font-size:14px;">
                     Your balance is now <b>{{ $sale->customer->points_balance }} points</b>
-                    <div style="font-size:12px; color:#667169;">(worth about Rs. {{ number_format($sale->customer->points_balance * \App\Models\BillingSetting::current()->points_redeem_value, 2) }} on your next visit)</div>
+                    <div style="font-size:12px; color:#667169;">(worth about Rs. {{ number_format($sale->customer->points_balance * ($pointsRedeemValue ?? (\App\Models\BillingSetting::current()->points_redeem_value ?? 1)), 2) }} on your next visit)</div>
                 </div>
             </div>
 

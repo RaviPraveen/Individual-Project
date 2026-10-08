@@ -98,11 +98,7 @@ class SupplierReturnController extends Controller
     }
 
     /**
-     * Locks the supplier return row (and re-checks its status inside the
-     * transaction) so two concurrent "complete" clicks can't both pass the
-     * pending-status check and double-decrement stock. Product rows are
-     * locked too, and a full stock-sufficiency pass runs before any
-     * decrement — mirrors PurchaseOrderController::markReceived() exactly.
+     * Complete supplier return and update inventory
      */
     public function complete(Request $request, SupplierReturn $supplierReturn): RedirectResponse
     {

@@ -6,25 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * Plain key-value store for admin-editable business settings that don't
- * belong to a more specific settings model (ReceiptSetting/BillingSetting
- * already own shop branding and loyalty rates — see memory on why this
- * table only holds the gap keys: tax_rate, currency_symbol,
- * low_stock_threshold_default).
+ * Key-value settings storage for system configuration values
+ * such as tax rate, currency symbol, and alert thresholds.
  */
 class Setting extends Model
 {
     protected $fillable = ['key', 'value'];
 
     /**
-     * Cached with a "found" flag alongside the value so a literal miss can
-     * be told apart from a genuinely empty string. The flag lives in an
-     * array rather than an object sentinel — the database cache driver
-     * unserializes with allowed_classes disabled, so any cached object
-     * (even a bare stdClass) comes back as __PHP_Incomplete_Class. Arrays
-     * don't hit that restriction. Same underlying lesson as
-     * BillingSetting/ReceiptSetting's firstOrCreate([]) default-attribute
-     * bug found earlier in this project: know what "missing" looks like.
+     * Retrieve a setting value by key with caching.
      */
     public static function get(string $key, $default = null)
     {

@@ -13,8 +13,7 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    // ─── Index ───────────────────────────────────────────────────────────────
-
+    // Display all users
     public function index(Request $request): View
     {
         $users = User::query()
@@ -31,8 +30,7 @@ class UserController extends Controller
         return view('admin.users.index', compact('users'));
     }
 
-    // ─── Create / Store ───────────────────────────────────────────────────────
-
+    // Create new user
     public function create(): View
     {
         return view('admin.users.create');
@@ -58,8 +56,7 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
     }
 
-    // ─── Edit / Update ────────────────────────────────────────────────────────
-
+    // Edit user details
     public function edit(User $user): View
     {
         return view('admin.users.edit', compact('user'));
@@ -115,8 +112,7 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
-    // ─── Destroy ─────────────────────────────────────────────────────────────
-
+    // Delete user
     public function destroy(Request $request, User $user): RedirectResponse
     {
         // Safeguard: cannot delete own account
@@ -149,8 +145,7 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User deleted.');
     }
 
-    // ─── Force Password Reset ─────────────────────────────────────────────────
-
+    // Force password reset
     public function resetPassword(Request $request, User $user): RedirectResponse
     {
         $request->validate([

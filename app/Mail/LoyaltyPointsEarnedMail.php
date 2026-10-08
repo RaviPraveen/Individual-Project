@@ -26,6 +26,9 @@ class LoyaltyPointsEarnedMail extends Mailable
     {
         return new Content(
             view: 'emails.loyalty-points-earned',
+            with: [
+                'pointsRedeemValue' => \App\Models\BillingSetting::current()->points_redeem_value ?? 1.0,
+            ],
         );
     }
 }
