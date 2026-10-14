@@ -3,7 +3,6 @@
         <h2 class="h4 mb-0">{{ __('My Profile') }}</h2>
     </x-slot>
 
-    {{-- Force password reset notice --}}
     @if (session('force_reset_notice'))
         <div class="alert alert-warning d-flex align-items-center gap-2 mb-4" role="alert">
             <i class="bi bi-exclamation-triangle-fill fs-5"></i>

@@ -81,7 +81,6 @@
 
 <x-barcode-scan-modal />
 
-<!-- Camera Barcode Scanner (additive — does not auto-submit the form) -->
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="{{ asset('js/barcode-scanner.js') }}"></script>
 <script>

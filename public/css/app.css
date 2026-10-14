@@ -1,19 +1,14 @@
-/* ==========================================================================
-   Foodcity POS - Application Stylesheet
-   ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 :root {
-  /* Light Blue Primary Brand Tokens */
   --pos-brand: #3B82F6;
   --pos-brand-hover: #2563EB;
   --pos-brand-dark: #1D4ED8;
   --pos-brand-light: #DBEAFE;
   --pos-accent: #60A5FA;
   --pos-brand-gradient: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-  
-  /* Status Colors */
+
   --pos-success: #10B981;
   --pos-success-hover: #059669;
   --pos-success-light: #ECFDF5;
@@ -24,14 +19,12 @@
   --pos-danger-light: #FEF2F2;
   --pos-info: #3B82F6;
   --pos-info-light: #EFF6FF;
-  
-  /* Gold / Loyalty Accent */
+
   --pos-gold: #D97706;
   --pos-gold-dark: #B45309;
   --pos-gold-light: #FEF3C7;
   --pos-gold-border: #FDE68A;
 
-  /* Neutrals & Surfaces */
   --pos-ink: #0F172A;
   --pos-heading: #0F172A;
   --pos-body: #334155;
@@ -44,7 +37,6 @@
   --pos-border: #E2E8F0;
   --pos-border-subtle: #F1F5F9;
 
-  /* Sidebar Tokens */
   --pos-sidebar-bg: #FFFFFF;
   --pos-sidebar-border: #E2E8F0;
   --pos-sidebar-ink: #334155;
@@ -55,7 +47,6 @@
   --pos-sidebar-active-text: #2563EB;
   --pos-sidebar-active-glow: rgba(59, 130, 246, 0.25);
 
-  /* Shadows & Elevation */
   --pos-shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
   --pos-shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
   --pos-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
@@ -63,20 +54,17 @@
   --pos-shadow-lg: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
   --pos-shadow-hover: 0 14px 28px -4px rgba(15, 23, 42, 0.1), 0 8px 12px -6px rgba(15, 23, 42, 0.05);
 
-  /* Radii Tokens (Standardized 12px System) */
-  --pos-radius: 0.75rem; /* 12px Card & Large Button Radius */
-  --pos-radius-sm: 0.625rem; /* 10px Medium Button & Input Radius */
-  --pos-radius-xs: 0.5rem; /* 8px Small Button & Badge Radius */
+  --pos-radius: 0.75rem;
+  --pos-radius-sm: 0.625rem;
+  --pos-radius-xs: 0.5rem;
   --pos-radius-pill: 9999px;
   --pos-transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   --pos-transition-fast: all 0.14s cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Fonts */
   --font-display: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* ---------- Base Global Styles ---------- */
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -100,7 +88,6 @@ body {
   color: var(--pos-brand-dark);
 }
 
-/* Typography Hierarchy */
 h1, .h1 { font-family: var(--font-display); font-weight: 800; font-size: 32px; letter-spacing: -0.02em; color: var(--pos-heading); }
 h2, .h2 { font-family: var(--font-display); font-weight: 800; font-size: 24px; letter-spacing: -0.02em; color: var(--pos-heading); }
 h3, .h3 { font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: -0.01em; color: var(--pos-heading); }
@@ -125,9 +112,8 @@ small, .text-muted {
   font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
 }
 
-/* Standardized Button Radius & Hierarchy */
 .btn {
-  border-radius: var(--pos-radius-sm); /* 10px */
+  border-radius: var(--pos-radius-sm);
   font-weight: 600;
   font-size: 14px;
   padding: 0.55rem 1.1rem;
@@ -139,13 +125,13 @@ small, .text-muted {
 }
 
 .btn-sm {
-  border-radius: var(--pos-radius-xs) !important; /* 8px */
+  border-radius: var(--pos-radius-xs) !important;
   font-size: 13px;
   padding: 0.38rem 0.8rem;
 }
 
 .btn-lg {
-  border-radius: var(--pos-radius) !important; /* 12px */
+  border-radius: var(--pos-radius) !important;
   font-size: 16px;
   padding: 0.75rem 1.4rem;
 }
@@ -176,11 +162,6 @@ small, .text-muted {
   color: var(--pos-heading);
 }
 
-/* Bootstrap's contextual button variants (success/danger/warning/info, plus
-   the outline-primary used for things like the camera-scan button) had no
-   overrides here, so they were falling back to Bootstrap 5's stock palette
-   (#0d6efd, #198754, #dc3545, #ffc107 — all visibly different shades from
-   this app's --pos-* brand tokens) instead of matching the rest of the UI. */
 .btn-outline-primary {
   background: #FFFFFF;
   border-color: var(--pos-brand);
@@ -290,7 +271,6 @@ small, .text-muted {
   transform: translateY(-1px);
 }
 
-/* Action Icon Buttons (40x40px, 10px Radius) */
 .btn-action {
   width: 38px;
   height: 38px;
@@ -308,11 +288,6 @@ small, .text-muted {
   box-shadow: var(--pos-shadow-xs);
 }
 
-/* ==========================================================================
-   Premium SaaS Form Inputs
-   Height 46px, 10px radius, soft focus ring (no thick Bootstrap outline),
-   icon/input groups rendered as one seamless control.
-   ========================================================================== */
 .form-control, .form-select {
   height: 46px;
   padding: 0 14px;
@@ -363,7 +338,6 @@ small, .text-muted {
   box-shadow: none;
 }
 
-/* Icon/button input groups — one seamless pill, not two stacked boxes */
 .input-group {
   border: 1px solid var(--pos-border);
   border-radius: 10px;
@@ -396,11 +370,6 @@ small, .text-muted {
   font-weight: 500;
 }
 
-/* Any button sits flush against the input (no outer radius), but only
-   icon-only outline/link buttons (camera scan, clear-search, etc.) also
-   lose their border/shadow/background — a solid action button dropped into
-   an input-group (e.g. "Parse", "Find Sale", "Max") must keep its normal
-   .btn-primary background, or its white label text becomes invisible. */
 .input-group > .btn {
   border-radius: 0 !important;
 }
@@ -413,7 +382,6 @@ small, .text-muted {
   background-color: transparent;
 }
 
-/* Subtle divider between an icon/text prefix|suffix and the input itself */
 .input-group > .input-group-text:first-child {
   border-right: 1px solid var(--pos-border-subtle) !important;
 }
@@ -424,7 +392,6 @@ small, .text-muted {
   border-left: 1px solid var(--pos-border-subtle) !important;
 }
 
-/* Barcode Search Container — larger variant of the same input-group treatment */
 .pos-billing-search-container {
   background: #FFFFFF;
   border: 1px solid var(--pos-border) !important;
@@ -444,7 +411,6 @@ small, .text-muted {
   box-shadow: none !important;
 }
 
-/* Status Badges (Height 26px, 8px Radius) */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -456,7 +422,6 @@ small, .text-muted {
   border-radius: 8px;
 }
 
-/* Gold / Loyalty Accent */
 .text-gold { color: var(--pos-gold) !important; }
 .bg-gold-subtle { background: var(--pos-gold-light) !important; color: var(--pos-gold-dark) !important; }
 .badge-gold {
@@ -475,10 +440,6 @@ small, .text-muted {
   box-shadow: var(--pos-shadow-xs);
 }
 
-/* ---------- Empty States (<x-empty-state>, used across ~30 admin/POS
-   pages — tables, dashboards, the shopping cart) — classes existed in the
-   component markup with no matching rules anywhere, so every empty state
-   in the app rendered as unstyled stacked text instead of this. ---------- */
 .pos-empty {
   display: flex;
   flex-direction: column;
@@ -512,13 +473,11 @@ small, .text-muted {
   max-width: 380px;
 }
 
-/* ---------- App Shell & Fixed 280px Sidebar ---------- */
 .pos-shell {
   min-height: 100vh;
   display: flex;
 }
 
-/* Fixed Premium Light Blue SaaS Sidebar (280px) */
 .pos-sidebar {
   position: fixed;
   top: 0;
@@ -671,7 +630,6 @@ small, .text-muted {
   }
 }
 
-/* Topbar */
 .pos-topbar {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px) saturate(180%);
@@ -779,7 +737,6 @@ small, .text-muted {
   }
 }
 
-/* ---------- Cards (12px Standard Radius) ---------- */
 .card {
   background: var(--pos-surface);
   border: 1px solid var(--pos-border);
@@ -797,7 +754,6 @@ small, .text-muted {
   padding: 1rem 1.25rem;
 }
 
-/* High Priority POS Billing Card Custom Styling */
 .pos-total-card {
   background: linear-gradient(135deg, #1E40AF 0%, #2563EB 50%, #3B82F6 100%);
   color: #FFFFFF;
@@ -834,7 +790,6 @@ small, .text-muted {
   transform: translateY(-2px);
 }
 
-/* Camera Barcode Scanner */
 #barcode-scan-video-region {
   width: 100%;
   min-height: 240px;
@@ -856,10 +811,6 @@ small, .text-muted {
   to { opacity: 1; transform: scale(1); }
 }
 
-/* Bootstrap's default .list-group-item-action.active uses its own stock
-   primary blue — used for the arrow-key-highlighted row in the POS
-   product/customer search dropdowns, so it needs the same brand-blue
-   treatment as everything else rather than a mismatched shade. */
 .list-group-item-action.active {
   background-color: var(--pos-surface-2);
   border-color: var(--pos-border);
@@ -867,12 +818,6 @@ small, .text-muted {
   z-index: 1;
 }
 
-/* POS product/customer search results — a bounded, scrollable dropdown
-   (rather than unbounded height) so a broad match with many rows never
-   grows past the viewport, and arrow-key/hover auto-scroll
-   (scrollIntoView) always scrolls this box instead of the whole page. A
-   quick fade-in avoids the hard instant snap when the row count changes
-   between keystrokes, which otherwise reads as the box "jumping". */
 .pos-search-dropdown {
   border: 1px solid var(--pos-border);
 }
@@ -883,12 +828,6 @@ small, .text-muted {
   animation: pos-scan-fade-in 0.12s ease-out;
 }
 
-/* ==========================================================================
-   AI Copilot Chat (ChatGPT/Claude-style two-pane interface)
-   Renders inside <x-admin-layout>/<x-cashier-layout>'s .pos-main, so it's
-   sized to fill the remaining viewport rather than assuming a bare 100vh —
-   .pos-topbar plus .pos-main's own top/bottom padding account for ~190px.
-   ========================================================================== */
 .ai-copilot-shell {
   display: flex;
   height: calc(100vh - 190px);
@@ -900,7 +839,6 @@ small, .text-muted {
   overflow: hidden;
 }
 
-/* ---------- Sidebar ---------- */
 .ai-copilot-sidebar {
   width: 280px;
   flex-shrink: 0;
@@ -1067,7 +1005,6 @@ small, .text-muted {
   color: #FCA5A5;
 }
 
-/* ---------- Main Workspace ---------- */
 .ai-copilot-main {
   flex: 1;
   min-width: 0;
@@ -1096,7 +1033,6 @@ small, .text-muted {
 .max-w-2xl { max-width: 640px; }
 .max-w-lg { max-width: 480px; }
 
-/* ---------- Welcome Hero ---------- */
 .ai-welcome-hero {
   max-width: 720px;
   margin-left: auto;
@@ -1149,7 +1085,6 @@ small, .text-muted {
   flex-shrink: 0;
 }
 
-/* ---------- Message Bubbles ---------- */
 .ai-message-row {
   display: flex;
   gap: 14px;
@@ -1261,7 +1196,6 @@ small, .text-muted {
   color: var(--pos-body);
 }
 
-/* ---------- Typing indicator ---------- */
 .ai-typing-dots {
   display: inline-flex;
   align-items: center;
@@ -1284,13 +1218,11 @@ small, .text-muted {
   30% { transform: translateY(-4px); opacity: 1; }
 }
 
-/* ---------- Widgets embedded in assistant replies ---------- */
 .ai-widget {
   max-width: 78%;
   margin-left: 48px;
 }
 
-/* ---------- Jump to latest ---------- */
 .ai-jump-bottom-btn {
   position: absolute;
   bottom: 100px;
@@ -1303,7 +1235,6 @@ small, .text-muted {
   padding: 0;
 }
 
-/* ---------- Input Deck ---------- */
 .ai-copilot-input-deck {
   flex-shrink: 0;
   padding: 14px 24px 18px;
@@ -1395,7 +1326,6 @@ small, .text-muted {
   font-size: 0.72rem;
 }
 
-/* ---------- Responsive ---------- */
 @media (max-width: 991.98px) {
   .ai-copilot-shell {
     height: calc(100vh - 160px);

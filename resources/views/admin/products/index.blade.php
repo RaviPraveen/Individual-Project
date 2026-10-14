@@ -16,7 +16,6 @@
         </div>
     </x-slot>
 
-    <!-- Filter Card -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body p-3.5">
             <form method="GET" action="{{ route('admin.products.index') }}" class="row g-3 align-items-end">
@@ -45,7 +44,6 @@
         </div>
     </div>
 
-    <!-- Products Table -->
     <div class="card border-0 shadow-sm">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -109,7 +107,6 @@
                             </td>
                         </tr>
 
-                        <!-- Adjust Stock Modal -->
                         <x-modal :name="'adjustStock'.$product->id">
                             <form method="POST" action="{{ route('admin.products.adjust-stock', $product) }}">
                                 @csrf

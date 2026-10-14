@@ -8,9 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class ForecastService
 {
-    /**
-     * Calculate weekly average sales forecast for active products based on history.
-     */
+    // Use average weekly sales to estimate demand over the next 7 and 30 days.
     public function forecastAll(int $lookbackWeeks = 8): Collection
     {
         $since = now()->subWeeks($lookbackWeeks);

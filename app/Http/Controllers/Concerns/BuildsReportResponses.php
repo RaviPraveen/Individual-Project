@@ -6,11 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/**
- * Shared by any controller building date-ranged, CSV-exportable report
- * pages (ReportController, RevenueController) — extracted so both share
- * one implementation instead of two copies drifting apart.
- */
+// Date filters and CSV downloads shared by report controllers.
 trait BuildsReportResponses
 {
     private function dateRange(Request $request): array

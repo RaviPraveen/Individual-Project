@@ -8,12 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RedirectIfPasswordResetRequired
 {
-    /**
-     * Redirect users who have been flagged for a forced password reset
-     * to their profile page so they can set a new password.
-     * We skip the redirect for the profile/password routes themselves
-     * (and logout) to avoid an infinite loop.
-     */
+    // Allow profile and logout routes while a password change is required.
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();

@@ -156,7 +156,7 @@ class PromotionCreateDraftPosterTest extends TestCase
         Storage::disk('public')->assertMissing($draftPath);
         $this->assertNotEmpty($promotion->ai_generations);
 
-        // The session draft's lifecycle ends with this create attempt either way.
+        // Clear the session draft after saving.
         $this->assertNull(session(PromotionPosterController::DRAFT_SESSION_KEY));
     }
 
@@ -174,8 +174,7 @@ class PromotionCreateDraftPosterTest extends TestCase
         ])->assertOk();
         $draftPath = session(PromotionPosterController::DRAFT_SESSION_KEY)['path'];
 
-        // Note: no use_generated_poster field at all — admin generated a
-        // preview but never clicked "Use This Poster".
+        // The admin generated a preview but did not select it.
         $this->actingAs($admin)->post(route('admin.promotions.store'), [
             'title' => 'No Poster Promo',
             'product_id' => $product->id,

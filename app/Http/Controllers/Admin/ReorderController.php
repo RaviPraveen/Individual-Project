@@ -39,13 +39,11 @@ class ReorderController extends Controller
             'suggestions' => $suggestions,
             'suppliers' => Supplier::orderBy('name')->get(),
             'narrative' => $this->narrative($request, $suggestions),
-            'geminiConfigured' => $this->aiService->isConfigured(),
+            'aiConfigured' => $this->aiService->isConfigured(),
         ]);
     }
 
-    /**
-     * Cache the reorder recommendation narrative for 30 minutes to minimize API calls.
-     */
+    // Cache the recommendation for 30 minutes to limit API requests.
     private function narrative(Request $request, $suggestions): ?string
     {
         if ($suggestions->isEmpty()) {

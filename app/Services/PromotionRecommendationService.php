@@ -8,13 +8,10 @@ use App\Models\Promotion;
 use App\Models\SaleItem;
 use Illuminate\Support\Facades\Cache;
 
-/**
- * Generates promotion recommendations based on slow-moving products and sales trends,
- * with optional AI-assisted summary phrasing and fallback to computed signals.
- */
+// Build recommendations from sales data, with optional wording from Hugging Face.
 class PromotionRecommendationService
 {
-    public function __construct(private AiService $ai) {}
+    public function __construct(private AiService $aiService) {}
 
     public function recommendations(?int $userId = null): array
     {
@@ -36,13 +33,13 @@ class PromotionRecommendationService
         $lines = collect($signals)->map(fn ($s) => "- {$s['reason']} → {$s['suggestion']}")->implode("\n");
         $narrative = null;
 
-        if ($this->ai->isConfigured()) {
+        if ($this->aiService->isConfigured()) {
             $prompt = 'You are a retail marketing analyst for a Sri Lankan supermarket called Welcome Foodcity. '.
                 "Based ONLY on the following computed signals, rewrite each one as a single short, punchy promotion ".
                 "recommendation (one line each, same order, no numbering, no extra commentary). Do not invent any ".
                 "products or numbers beyond what is given.\n\n{$lines}";
 
-            $narrative = $this->ai->generate($prompt);
+            $narrative = $this->aiService->generate($prompt);
 
             if ($userId) {
                 AiLog::create([
@@ -68,9 +65,6 @@ class PromotionRecommendationService
         return $signals;
     }
 
-    /**
-     * @return array<int, array{icon: string, reason: string, suggestion: string, product_id: ?int}>
-     */
     private function collectSignals(): array
     {
         $signals = [];
@@ -96,7 +90,7 @@ class PromotionRecommendationService
         $promotedProductIds = Promotion::whereIn('status', [Promotion::STATUS_ACTIVE, Promotion::STATUS_SCHEDULED])
             ->pluck('product_id')->all();
 
-        // High stock, barely selling — a straightforward discount candidate.
+        // Suggest a discount for high stock with few recent sales.
         $highStockSlowMover = Product::where('is_active', true)
             ->whereNotIn('id', $promotedProductIds)
             ->get()
@@ -137,7 +131,7 @@ class PromotionRecommendationService
             ];
         }
 
-        // Near-expiry stock — clearance candidate.
+        // Suggest clearance for stock close to expiry.
         $nearExpiryProduct = Product::where('is_active', true)
             ->whereNotIn('id', $promotedProductIds)
             ->whereNotNull('expiry_date')
@@ -155,8 +149,7 @@ class PromotionRecommendationService
             ];
         }
 
-        // Active promotion with low display-to-sale conversion — a real signal
-        // once it's had a meaningful number of rotation turns.
+        // Check conversion after the promotion has had enough display views.
         $underperforming = Promotion::where('status', Promotion::STATUS_ACTIVE)
             ->where('display_count', '>=', 20)
             ->get()

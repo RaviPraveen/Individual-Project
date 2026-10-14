@@ -68,12 +68,7 @@ class Promotion extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /**
-     * The status a promotion SHOULD have right now, based purely on its
-     * dates — ignoring any stored 'paused' override. Used both to display
-     * an accurate badge without waiting for the next sync, and by
-     * syncDueStatuses()/activate() to decide what "resuming" should mean.
-     */
+    // Determine the scheduled status without the manual pause setting.
     public function dateDerivedStatus(): string
     {
         $now = now();
@@ -89,11 +84,7 @@ class Promotion extends Model
         return self::STATUS_ACTIVE;
     }
 
-    /**
-     * What should actually be shown/used right now: a manual pause always
-     * wins over the date-derived status (an admin turning a promotion off
-     * must not have it silently reappear because its window is still open).
-     */
+    // Keep a promotion paused until an admin resumes it.
     public function effectiveStatus(): string
     {
         return $this->status === self::STATUS_PAUSED
@@ -101,12 +92,7 @@ class Promotion extends Model
             : $this->dateDerivedStatus();
     }
 
-    /**
-     * Bulk-flips scheduled→active and (scheduled|active)→expired directly in
-     * SQL. Called at the top of any admin/customer-display read path so
-     * status stays correct without depending on a working cron scheduler in
-     * dev — paused promotions are deliberately left alone.
-     */
+    // Update due statuses when promotions are loaded; leave paused ones unchanged.
     public static function syncDueStatuses(): void
     {
         $now = now();
@@ -126,13 +112,7 @@ class Promotion extends Model
         $this->update(['status' => self::STATUS_PAUSED]);
     }
 
-    /**
-     * Manual "ON" toggle: resume respecting the schedule rather than forcing
-     * active — a promotion whose window hasn't started yet goes back to
-     * scheduled, and one whose window has already closed refuses to
-     * reactivate at all (the caller should check canActivate() first and
-     * surface the "expired, update the end date" message).
-     */
+    // Check canActivate() before resuming so expired promotions stay inactive.
     public function activate(): void
     {
         $this->update(['status' => $this->dateDerivedStatus()]);
@@ -158,5 +138,16 @@ class Promotion extends Model
         $this->discount_percentage = $this->current_price > 0
             ? round((($this->current_price - $this->offer_price) / $this->current_price) * 100, 2)
             : 0;
+    }
+
+    public function posterDetails(): array
+    {
+        return [
+            'product_id' => (int) $this->product_id,
+            'title' => (string) $this->title,
+            'description' => (string) $this->description,
+            'current_price' => (string) $this->current_price,
+            'offer_price' => (string) $this->offer_price,
+        ];
     }
 }

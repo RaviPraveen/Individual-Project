@@ -96,10 +96,7 @@ class ReceiptSettingController extends Controller
         return redirect()->route('admin.receipt-settings.edit')->with('success', 'Logo removed.');
     }
 
-    /**
-     * Renders a sample receipt PDF using the currently *saved* settings, so
-     * the admin can see exactly what a printed/emailed copy looks like.
-     */
+    // Preview the receipt using the saved settings.
     public function pdf(): Response
     {
         $data = [

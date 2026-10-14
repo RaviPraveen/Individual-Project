@@ -28,7 +28,6 @@
       marked.setOptions({ breaks: true, gfm: true });
     }
 
-    /* ---------- helpers ---------- */
     function urlFor(template, id) {
       return template.replace('__ID__', id);
     }
@@ -59,7 +58,7 @@
       }, options)).then(r => r.json().then(data => ({ ok: r.ok, data })));
     }
 
-    /* ---------- Scroll & Jump to Bottom Button ---------- */
+    // Show the jump button when older messages are being viewed.
     messagesArea.addEventListener('scroll', () => {
       const isScrolledUp = messagesArea.scrollHeight - messagesArea.scrollTop - messagesArea.clientHeight > 150;
       if (jumpBottomBtn) {
@@ -71,7 +70,7 @@
       jumpBottomBtn.addEventListener('click', scrollToBottom);
     }
 
-    /* ---------- Search History Filter ---------- */
+    // Filter conversation titles.
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().trim();
@@ -82,7 +81,7 @@
       });
     }
 
-    /* ---------- widgets & cards ---------- */
+    // Database widgets.
     function renderWidget(widget) {
       if (!widget) return null;
 
@@ -209,7 +208,6 @@
       return wrap;
     }
 
-    /* ---------- messages ---------- */
     function appendMessage(message) {
       const userRow = document.createElement('div');
       userRow.className = 'ai-message-row user';
@@ -328,7 +326,6 @@
       document.getElementById('ai-typing-row')?.remove();
     }
 
-    /* ---------- sending ---------- */
     function sendMessage(text, isRegenerate) {
       text = (text || '').trim();
       if (!text) return;
@@ -395,12 +392,12 @@
       }
     });
 
-    /* ---------- suggestion prompt cards ---------- */
+    // Suggested questions.
     document.querySelectorAll('.ai-suggestion-card').forEach(card => {
       card.addEventListener('click', () => sendMessage(card.dataset.text));
     });
 
-    /* ---------- sidebar history switching ---------- */
+    // Conversation actions.
     function setActiveSidebarItem(id) {
       historyList.querySelectorAll('.ai-history-item').forEach(item => {
         item.classList.toggle('active', String(item.dataset.id) === String(id));
@@ -532,7 +529,6 @@
       if (el) el.textContent = title || 'New Chat';
     }
 
-    /* ---------- new chat / clear chat ---------- */
     function startNewChat() {
       activeConversationId = null;
       messagesList.innerHTML = '';
@@ -559,10 +555,8 @@
       });
     });
 
-    /* ---------- mobile sidebar toggle ---------- */
     sidebarToggle?.addEventListener('click', () => sidebar.classList.toggle('show'));
 
-    /* ---------- initial render ---------- */
     config.initialMessages.forEach(appendMessage);
     scrollToBottom();
   });

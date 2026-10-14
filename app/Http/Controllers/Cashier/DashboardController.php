@@ -12,19 +12,19 @@ use Illuminate\View\View;
 class DashboardController extends Controller
 {
     public function __construct(
-        private CashierDashboardService $dashboard,
-        private AiService $gemini,
+        private CashierDashboardService $dashboardService,
+        private AiService $aiService,
     ) {}
 
     public function index(Request $request): View
     {
         $cashier = $request->user();
 
-        $stats = $this->dashboard->statsToday($cashier);
-        $paymentSummary = $this->dashboard->paymentSummaryToday($cashier);
-        $todaysSales = $this->dashboard->myTodaysSales($cashier);
-        $recentTransactions = $this->dashboard->recentTransactions($cashier, 10);
-        $lowStock = $this->dashboard->lowStockProducts(8);
+        $stats = $this->dashboardService->statsToday($cashier);
+        $paymentSummary = $this->dashboardService->paymentSummaryToday($cashier);
+        $todaysSales = $this->dashboardService->myTodaysSales($cashier);
+        $recentTransactions = $this->dashboardService->recentTransactions($cashier, 10);
+        $lowStock = $this->dashboardService->lowStockProducts(8);
 
         $notices = [];
         if ($lowStock->isNotEmpty()) {
@@ -56,7 +56,7 @@ class DashboardController extends Controller
             'notices' => $notices,
             'shift' => $shift,
             'aiLogs' => $aiLogs,
-            'geminiConfigured' => $this->gemini->isConfigured(),
+            'aiConfigured' => $this->aiService->isConfigured(),
         ]);
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\SupplierReturnItem;
 use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -80,10 +81,13 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
-        if ($product->saleItems()->exists()) {
+        if ($product->saleItems()->exists()
+            || $product->purchaseOrderItems()->exists()
+            || $product->stockMovements()->exists()
+            || SupplierReturnItem::where('product_id', $product->id)->exists()) {
             $product->update(['is_active' => false]);
 
-            return redirect()->route('admin.products.index')->with('success', 'Product has sales history, so it was deactivated instead of deleted.');
+            return redirect()->route('admin.products.index')->with('success', 'Product has transaction history, so it was deactivated instead of deleted.');
         }
 
         $product->delete();
@@ -129,15 +133,7 @@ class ProductController extends Controller
         return view('admin.products.import');
     }
 
-    /**
-     * Bulk create/update products from a CSV (name, sku, category, cost
-     * price, selling price, stock, reorder level). Matching is by SKU: an
-     * existing SKU updates that product, a new one creates it. Unknown
-     * category names are auto-created rather than skipped, since forcing
-     * the admin to pre-create every category defeats the point of a bulk
-     * import. Rows failing validation are skipped with a reason instead of
-     * aborting the whole file.
-     */
+    // Match CSV rows by SKU, create missing categories, and report invalid rows.
     public function import(Request $request): View
     {
         $request->validate([
@@ -246,18 +242,18 @@ class ProductController extends Controller
 
     public function search(Request $request): JsonResponse
     {
-        $term = $request->query('q', '');
+        $term = trim($request->query('q', ''));
 
         $products = Product::query()
             ->where('is_active', true)
             ->when($term !== '', function ($query) use ($term) {
-                // Search by name, sku, or barcode
                 $query->where(function ($q) use ($term) {
                     $q->where('name', 'like', "%{$term}%")
                         ->orWhere('sku', 'like', "%{$term}%")
                         ->orWhere('barcode', 'like', "%{$term}%");
                 });
             })
+            ->orderByRaw('CASE WHEN barcode = ? THEN 0 WHEN sku = ? THEN 1 ELSE 2 END', [$term, $term])
             ->orderBy('name')
             ->limit(10)
             ->get(['id', 'name', 'sku', 'barcode', 'selling_price', 'stock_qty']);

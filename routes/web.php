@@ -128,7 +128,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])
             Route::put('/', [SettingController::class, 'update'])->name('update');
         });
 
-        // User Management (admin only)
         Route::resource('users', UserController::class)->except('show');
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
@@ -148,9 +147,7 @@ Route::middleware(['auth', 'verified', 'role:admin,cashier'])->group(function ()
     Route::get('/returns/{saleReturn}', [ReturnController::class, 'show'])->name('returns.show');
 });
 
-// Billing is the one shared POS module: admins get full access to the same
-// screens/routes cashiers use (not a duplicate implementation), while
-// dashboard/customer-display/ai-chat below stay cashier-only.
+// Admins and cashiers use the same billing routes.
 Route::middleware(['auth', 'verified', 'role:cashier,admin'])
     ->prefix('cashier')
     ->name('cashier.')
@@ -163,6 +160,12 @@ Route::middleware(['auth', 'verified', 'role:cashier,admin'])
 
         Route::post('/billing/upsell-suggestion', [BillingController::class, 'upsellSuggestion'])->name('billing.upsell');
         Route::post('/billing/parse-order', [BillingController::class, 'parseOrderText'])->name('billing.parse-order');
+
+        Route::get('/display', [CustomerDisplayController::class, 'show'])->name('display.show');
+        Route::get('/display/data', [CustomerDisplayController::class, 'data'])->name('display.data');
+        Route::post('/display/sync', [CustomerDisplayController::class, 'sync'])->name('display.sync');
+        Route::get('/display/promotions', [CustomerDisplayController::class, 'promotions'])->name('display.promotions');
+        Route::post('/display/promotions/{promotion}/viewed', [CustomerDisplayController::class, 'markPromotionViewed'])->name('display.promotions.viewed');
     });
 
 Route::middleware(['auth', 'verified', 'role:cashier'])
@@ -170,12 +173,6 @@ Route::middleware(['auth', 'verified', 'role:cashier'])
     ->name('cashier.')
     ->group(function () {
         Route::get('/dashboard', [CashierDashboardController::class, 'index'])->name('dashboard');
-
-        Route::get('/display', [CustomerDisplayController::class, 'show'])->name('display.show');
-        Route::get('/display/data', [CustomerDisplayController::class, 'data'])->name('display.data');
-        Route::post('/display/sync', [CustomerDisplayController::class, 'sync'])->name('display.sync');
-        Route::get('/display/promotions', [CustomerDisplayController::class, 'promotions'])->name('display.promotions');
-        Route::post('/display/promotions/{promotion}/viewed', [CustomerDisplayController::class, 'markPromotionViewed'])->name('display.promotions.viewed');
 
         Route::get('/ai-chat', [AiChatController::class, 'index'])->name('ai-chat.index');
         Route::post('/ai-chat', [AiChatController::class, 'ask'])->name('ai-chat.ask');

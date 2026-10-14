@@ -13,9 +13,6 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
     public function edit(Request $request): View
     {
         return view('profile.edit', [
@@ -23,9 +20,6 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Update the user's profile information (name + email).
-     */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $request->user()->fill($request->validated());
@@ -39,10 +33,7 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
-    /**
-     * Update the user's own password.
-     * Also clears the force_password_reset flag if it was set.
-     */
+    // Clear the required password change after the new password is saved.
     public function updatePassword(Request $request): RedirectResponse
     {
         $request->validate([

@@ -19,11 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'force.password.reset' => RedirectIfPasswordResetRequired::class,
         ]);
 
-        // Apply the force-password-reset redirect to all authenticated web requests
+        // Require a password change after an admin resets a staff password.
         $middleware->appendToGroup('web', RedirectIfPasswordResetRequired::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*'),
+            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
     })->create();

@@ -3,7 +3,7 @@
         'conversationGroups' => $conversationGroups,
         'activeConversation' => $activeConversation,
         'messages' => $messages,
-        'geminiConfigured' => $geminiConfigured,
+        'aiConfigured' => $aiConfigured,
         'suggestions' => $suggestions,
     ])
 </x-cashier-layout>

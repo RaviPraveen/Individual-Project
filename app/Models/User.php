@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -28,11 +27,6 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -54,32 +48,29 @@ class User extends Authenticatable
         return $this->role === 'cashier';
     }
 
-    /** Sales processed by this user (as cashier). */
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class, 'cashier_id');
     }
 
-    /** Stock movements recorded by this user. */
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class, 'recorded_by');
     }
 
-    /** Purchase orders created by this user. */
     public function purchaseOrders(): HasMany
     {
         return $this->hasMany(PurchaseOrder::class, 'created_by');
     }
 
-    /**
-     * Whether the user has any related records (sales, stock movements, POs).
-     * Used to determine soft-delete vs hard-delete.
-     */
+    // Keep staff accounts with transaction history by deactivating them.
     public function hasRelatedRecords(): bool
     {
         return $this->sales()->exists()
             || $this->stockMovements()->exists()
-            || $this->purchaseOrders()->exists();
+            || $this->purchaseOrders()->exists()
+            || SaleReturn::where('processed_by', $this->id)->exists()
+            || SupplierReturn::where('created_by', $this->id)->exists()
+            || AiLog::where('user_id', $this->id)->exists();
     }
 }

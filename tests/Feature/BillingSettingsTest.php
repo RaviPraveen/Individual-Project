@@ -76,8 +76,7 @@ class BillingSettingsTest extends TestCase
         $this->assertEquals(20.0, (float) $sale->bag_fee);
         $this->assertEquals(1020.0, (float) $sale->total);
 
-        // Points earned on the Rs 1000 merchandise (1% rate) = 10, not on
-        // the Rs 1020 total that includes the bag fee.
+        // Earn 10 points on the Rs 1000 purchase, excluding the bag fee.
         $this->assertEquals(10, $sale->points_earned);
     }
 

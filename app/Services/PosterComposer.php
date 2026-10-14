@@ -5,10 +5,7 @@ namespace App\Services;
 use App\Models\Promotion;
 use GdImage;
 
-/**
- * Composes promotional posters using PHP GD by overlaying product details,
- * discount badges, and price information onto background images.
- */
+// Add product details and prices to a poster background using GD.
 class PosterComposer
 {
     private const WIDTH = 1200;
@@ -48,11 +45,7 @@ class PosterComposer
         return $bytes;
     }
 
-    /**
-     * Crop-then-scale ("object-fit: cover") so the AI image fills the
-     * whole poster canvas without distortion, regardless of what aspect
-     * ratio the model returned.
-     */
+    // Crop the background to fill the poster without stretching it.
     private function coverResize(GdImage $source, int $targetW, int $targetH): GdImage
     {
         $srcW = imagesx($source);
@@ -77,9 +70,6 @@ class PosterComposer
         return $canvas;
     }
 
-    /**
-     * Fallback gradient background when background image is unavailable
-     */
     private function fallbackBackground(): GdImage
     {
         $canvas = imagecreatetruecolor(self::WIDTH, self::HEIGHT);
@@ -128,12 +118,10 @@ class PosterComposer
     {
         $panelTop = 560;
 
-        // Vertical alpha gradient (transparent -> ~85% black) rather than a
-        // flat rectangle, so the panel blends into the photo instead of
-        // reading as a hard-edged box.
+        // Fade the bottom panel into the photo.
         for ($y = $panelTop; $y < self::HEIGHT; $y++) {
             $ratio = ($y - $panelTop) / (self::HEIGHT - $panelTop);
-            $alpha = (int) (127 - min($ratio * 108, 108)); // 127 = fully transparent .. ~19 = ~85% opaque
+            $alpha = (int) (127 - min($ratio * 108, 108)); // GD alpha: 127 is transparent and 0 is opaque.
             $color = imagecolorallocatealpha($canvas, 15, 23, 42, max(0, $alpha));
             imageline($canvas, 0, $y, self::WIDTH, $y, $color);
         }
@@ -141,21 +129,19 @@ class PosterComposer
         $left = 48;
         $right = self::WIDTH - 48;
 
-        // "LIMITED OFFER · TODAY ONLY" pill
         $pillY = $panelTop + 24;
         $gold = imagecolorallocate($canvas, ...self::ACCENT_GOLD);
         $pillWidth = $this->textWidth($this->font('semibold'), 16, 'LIMITED OFFER  ·  TODAY ONLY') + 40;
         imagefilledrectangle($canvas, $left, $pillY, $left + $pillWidth, $pillY + 34, $gold);
         $this->leftText($canvas, 'LIMITED OFFER  ·  TODAY ONLY', $this->font('semibold'), 16, $left + 20, $pillY + 24, [15, 23, 42]);
 
-        // Title (wrapped to at most 2 lines)
         $titleY = $pillY + 76;
         $titleLines = $this->wrapText($promotion->title, $this->font('bold'), 40, self::WIDTH - $left - 380);
         foreach (array_slice($titleLines, 0, 2) as $i => $line) {
             $this->leftText($canvas, $line, $this->font('bold'), 40, $left, $titleY + ($i * 50), [255, 255, 255]);
         }
 
-        // Price row: strikethrough current price, then large offer price
+        // Strike through the original price before drawing the offer price.
         $priceY = $titleY + (min(count($titleLines), 2) * 50) + 50;
         $currentLabel = 'Rs '.number_format((float) $promotion->current_price, 2);
         $currentWidth = $this->textWidth($this->font('regular'), 24, $currentLabel);
@@ -168,7 +154,6 @@ class PosterComposer
         $offerLabel = 'Rs '.number_format((float) $promotion->offer_price, 2);
         $this->leftText($canvas, $offerLabel, $this->font('bold'), 48, $left + $currentWidth + 24, $priceY + 8, [...self::ACCENT_GOLD]);
 
-        // "BUY NOW" CTA button, bottom-right
         $ctaLabel = 'BUY NOW';
         $ctaWidth = $this->textWidth($this->font('bold'), 20, $ctaLabel) + 56;
         $ctaHeight = 56;
@@ -195,7 +180,6 @@ class PosterComposer
         return abs($box[4] - $box[0]);
     }
 
-    /** @return array<int, string> */
     private function wrapText(string $text, string $font, int $size, int $maxWidth): array
     {
         $words = explode(' ', $text);

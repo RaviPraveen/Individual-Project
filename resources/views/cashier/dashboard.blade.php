@@ -17,7 +17,6 @@
         </div>
     </x-slot>
 
-    <!-- Shift Metrics Cards -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-lg-3">
             <x-stat-card icon="bi-cash-stack" tone="success" :label="__('Today\'s Revenue')" :value="'Rs '.number_format($stats['sales_total'], 2)" />
@@ -33,7 +32,6 @@
         </div>
     </div>
 
-    <!-- Quick Action Cards Grid -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-lg-3">
             <a href="{{ route('cashier.billing.index') }}" class="card h-100 text-decoration-none border-0 shadow-sm quick-action">
@@ -81,7 +79,6 @@
         </div>
     </div>
 
-    <!-- Quick Lookup Collapsible Panels -->
     <div class="collapse mb-4" id="quickProductSearch">
         <div class="card border-0 shadow-md">
             <div class="card-body p-4">
@@ -102,11 +99,8 @@
         </div>
     </div>
 
-    <!-- Main Shift Lists & Side Panels -->
     <div class="row g-4">
-        <!-- Left Column: Sales & History (col-lg-8) -->
         <div class="col-lg-8 d-flex flex-column gap-4">
-            <!-- Today's Sales Table -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
                     <span class="fw-bold text-dark h5 mb-0"><i class="bi bi-journal-text me-1.5 text-primary"></i> {{ __("My Today's Sales Log") }}</span>
@@ -152,7 +146,6 @@
                 </div>
             </div>
 
-            <!-- Last 10 Transactions -->
             <div class="card border-0 shadow-sm" id="recent-transactions">
                 <div class="card-header bg-white py-3 border-bottom">
                     <span class="fw-bold text-dark h5 mb-0"><i class="bi bi-clock-history me-1.5 text-primary"></i> {{ __('Last 10 System Transactions') }}</span>
@@ -192,9 +185,7 @@
             </div>
         </div>
 
-        <!-- Right Column: Payment Breakdown & Quick Tools (col-lg-4) -->
         <div class="col-lg-4 d-flex flex-column gap-4">
-            <!-- Payment Summary -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3 border-bottom fw-bold text-dark">
                     <i class="bi bi-wallet2 me-1.5 text-primary"></i> {{ __('Payment Summary (Today)') }}
@@ -231,7 +222,6 @@
                 </div>
             </div>
 
-            <!-- Low Stock Warning Widget -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                     <span class="fw-bold text-dark"><i class="bi bi-exclamation-triangle me-1.5 text-warning"></i> {{ __('Low Stock Warnings') }}</span>
@@ -257,7 +247,6 @@
                 </div>
             </div>
 
-            <!-- AI Quick Ask Widget -->
             <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #EEF2FF 0%, #FFFFFF 100%);">
                 <div class="card-header bg-transparent py-3 border-bottom border-primary-subtle fw-bold text-primary">
                     <i class="bi bi-stars me-1.5 text-gold"></i> {{ __('AI Quick Business Assistant') }}
@@ -269,7 +258,7 @@
                         <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold rounded-2">{{ __('Ask AI') }}</button>
                     </form>
 
-                    @if (! $geminiConfigured)
+                    @if (! $aiConfigured)
                         <div class="alert alert-light border small mt-2 mb-0 py-2 text-muted">{{ __('AI answers are unavailable until API key is configured.') }}</div>
                     @endif
 

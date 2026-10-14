@@ -1,9 +1,3 @@
-{{--
-    Proof-of-return document. Mirrors receipts/_body.blade.php's
-    table/inline-block layout (no flexbox) and branding so it stays visually
-    consistent with the sale receipt, but this one is a plain in-app view
-    (no PDF/print variant needed for this pass).
---}}
 <div style="max-width: 420px; margin: 0 auto; font-size: 14px; color: #1A2420;">
     <div style="text-align: center; margin-bottom: 8px;">
         <div style="font-weight: 700; font-size: 17px;">{{ $settings->shop_name }}</div>

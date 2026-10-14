@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CustomerController extends Controller
@@ -42,7 +43,7 @@ class CustomerController extends Controller
 
     public function update(Request $request, Customer $customer): RedirectResponse
     {
-        $validated = $this->validateCustomer($request);
+        $validated = $this->validateCustomer($request, $customer);
 
         $customer->update($validated);
 
@@ -133,11 +134,11 @@ class CustomerController extends Controller
         return response()->json($customers);
     }
 
-    private function validateCustomer(Request $request): array
+    private function validateCustomer(Request $request, ?Customer $customer = null): array
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:50'],
+            'phone' => ['nullable', 'string', 'max:50', Rule::unique('customers', 'phone')->ignore($customer?->id)],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
         ]);

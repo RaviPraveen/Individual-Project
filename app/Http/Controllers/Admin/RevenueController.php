@@ -28,11 +28,9 @@ class RevenueController extends Controller
             $now->copy()->subDay()->startOfDay(), $now->copy()->subDay()->endOfDay(),
         );
 
-        // "This week vs last week" compares like-for-like: the elapsed days
-        // of the current week (Mon..today) against the same weekday span
-        // one week earlier, not the full previous week.
+        // Compare the same weekdays in this week and last week.
         $weekStart = $now->copy()->startOfWeek();
-        $daysElapsedThisWeek = $weekStart->diffInDays($now);
+        $daysElapsedThisWeek = (int) $weekStart->diffInDays($now->copy()->startOfDay());
         $prevWeekStart = $weekStart->copy()->subWeek();
 
         $week = $this->comparedTotals(
@@ -40,20 +38,19 @@ class RevenueController extends Controller
             $prevWeekStart, $prevWeekStart->copy()->addDays($daysElapsedThisWeek)->endOfDay(),
         );
 
-        // "This month vs last month" likewise compares month-to-date against
-        // the same number of days into the previous month.
+        // Compare the same number of days in each month.
         $prevMonthStart = $now->copy()->subMonthNoOverflow()->startOfMonth();
 
         $month = $this->comparedTotals(
             $monthStart, $end,
-            $prevMonthStart, $prevMonthStart->copy()->addDays($now->day - 1)->endOfDay(),
+            $prevMonthStart, $prevMonthStart->copy()->day(min($now->day, $prevMonthStart->daysInMonth))->endOfDay(),
         );
 
-        $prevYearStart = $now->copy()->subYear()->startOfYear();
+        $prevYearEnd = $now->copy()->subYearNoOverflow()->endOfDay();
 
         $year = $this->comparedTotals(
             $now->copy()->startOfYear(), $end,
-            $prevYearStart, $prevYearStart->copy()->addDays($now->dayOfYear - 1)->endOfDay(),
+            $prevYearEnd->copy()->startOfYear(), $prevYearEnd,
         );
 
         return view('admin.revenue.index', [
@@ -173,11 +170,7 @@ class RevenueController extends Controller
         ]);
     }
 
-    /**
-     * Same as the shared dateRange() but defaults to a caller-supplied range
-     * (current month, for the by-Product/by-Category pages) instead of the
-     * trait's fixed last-30-days default.
-     */
+    // Allow revenue pages to default to the current month.
     private function dateRangeOrDefault(Request $request, Carbon $defaultStart, Carbon $defaultEnd): array
     {
         $start = $request->filled('start_date')
@@ -191,9 +184,6 @@ class RevenueController extends Controller
         return [$start, $end];
     }
 
-    /**
-     * Calculate revenue totals and comparison percentage
-     */
     private function comparedTotals(Carbon $start, Carbon $end, Carbon $prevStart, Carbon $prevEnd): array
     {
         $current = $this->rangeTotals($start, $end);
@@ -234,12 +224,9 @@ class RevenueController extends Controller
         ];
     }
 
-    /**
-     * Calculate monthly revenue trend for past 12 months
-     */
     private function monthlyTrend(): array
     {
-        $start = now()->subMonths(11)->startOfMonth();
+        $start = now()->startOfMonth()->subMonths(11);
 
         $rows = SaleItem::query()
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
@@ -258,7 +245,7 @@ class RevenueController extends Controller
         $data = [];
 
         for ($i = 11; $i >= 0; $i--) {
-            $month = now()->subMonths($i);
+            $month = now()->startOfMonth()->subMonths($i);
             $key = $month->format('Y-m');
             $labels[] = $month->format('M Y');
             $data[] = $byMonth[$key] ?? 0.0;

@@ -64,8 +64,7 @@ class PromotionAnalyticsTest extends TestCase
 
         // Within window — counted.
         $this->saleWithItem($product, 3);
-        // A sale of the SAME product but made before the promotion started —
-        // must not be counted.
+        // Exclude sales made before the promotion started.
         $outOfWindowSale = $this->saleWithItem($product, 5);
         $outOfWindowSale->forceFill(['created_at' => now()->subDays(3)])->save();
 
@@ -116,9 +115,7 @@ class PromotionAnalyticsTest extends TestCase
     public function test_recommendations_fall_back_to_computed_text_when_ai_is_unconfigured(): void
     {
         $admin = $this->admin();
-        // High stock, essentially no sales in 30 days -> should trigger the
-        // "high stock slow mover" signal, phrased without AI (test env has
-        // no Hugging Face key configured).
+        // Check the computed recommendation without a Hugging Face key.
         Product::create([
             'name' => 'Overstocked Item', 'sku' => 'SKU-OVERSTOCK', 'cost_price' => 100,
             'selling_price' => 200, 'stock_qty' => 500, 'reorder_level' => 10,

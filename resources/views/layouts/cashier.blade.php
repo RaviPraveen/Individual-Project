@@ -7,7 +7,6 @@
 
         <title>{{ config('app.name', 'Foodcity POS') }} — Cashier</title>
 
-        <!-- Fonts & Icons -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -16,14 +15,12 @@
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
-        <!-- Centralized SaaS POS Design System -->
         <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
     </head>
     <body>
         <div id="pos-flash-data" data-success="{{ session('success') }}" data-error="{{ session('error') }}" hidden></div>
 
         <div class="pos-shell">
-            <!-- Fixed Premium Light Blue Cashier Sidebar -->
             <aside class="pos-sidebar">
                 <a href="{{ route('cashier.dashboard') }}" class="brand">
                     <span class="brand-mark">🛒</span>
@@ -34,11 +31,7 @@
                 </a>
 
                 @php
-                    // Billing is the one shared POS module admins and cashiers
-                    // both use — but Dashboard/AI Assistant stay separate
-                    // per-role screens, so an admin viewing this shared shell
-                    // needs those two links pointed at their own routes
-                    // instead of the cashier-only ones (which would 403).
+                    // Use admin routes for the dashboard and assistant when an admin opens billing.
                     $isAdminOnCashierShell = auth()->user()->role === 'admin';
                 @endphp
                 <nav class="pos-nav">
@@ -64,7 +57,6 @@
                 </div>
             </aside>
 
-            <!-- Main Shell -->
             <div class="pos-content-wrapper flex-grow-1 min-w-0 d-flex flex-column">
                 @include('layouts.navigation', ['showSidebarToggle' => true])
 
@@ -82,7 +74,6 @@
 
         <div class="toast-container position-fixed bottom-0 end-0 p-3" id="pos-toast-container" style="z-index:1080;"></div>
 
-        <!-- JS Libraries -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="{{ asset('js/pos.js') }}"></script>

@@ -1,6 +1,3 @@
-{{--
-    Shared Returns & Refunds screen for both admin and cashier
---}}
 @if (isset($stats))
     <div class="row g-3 mb-4">
         <div class="col-6 col-lg-4">
@@ -226,6 +223,8 @@
     function rebuildReturnInputs() {
         itemsInputs.innerHTML = '';
         let totalEstimated = 0;
+        const roundMoney = value => Math.round((value + Number.EPSILON) * 100) / 100;
+        const discountRatio = currentSale.subtotal > 0 ? currentSale.discount / currentSale.subtotal : 0;
 
         const inputs = itemsBody.querySelectorAll('.return-qty-input');
         inputs.forEach((input, index) => {
@@ -238,11 +237,16 @@
                     <input type="hidden" name="items[${index}][sale_item_id]" value="${itemId}">
                     <input type="hidden" name="items[${index}][quantity]" value="${qty}">
                 `;
-                totalEstimated += qty * unitPrice;
+                const subtotal = roundMoney(qty * unitPrice);
+                const discount = roundMoney(subtotal * discountRatio);
+                const tax = roundMoney((subtotal - discount) * currentSale.refund_tax_percent / 100);
+                const points = currentSale.subtotal > 0
+                    ? roundMoney(currentSale.redemption_value * subtotal / currentSale.subtotal) : 0;
+                totalEstimated += subtotal - discount + tax - points;
             }
         });
 
-        estimatedRefund.textContent = totalEstimated.toFixed(2);
+        estimatedRefund.textContent = Math.max(0, totalEstimated).toFixed(2);
     }
 
     document.getElementById('cancel-return-btn').addEventListener('click', () => {

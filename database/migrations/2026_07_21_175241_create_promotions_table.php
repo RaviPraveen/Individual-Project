@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('promotions', function (Blueprint $table) {
@@ -17,10 +14,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->text('description')->nullable();
 
-            // Snapshot at creation time — current_price mirrors the product's
-            // selling_price when the promotion was made, so the promotion
-            // keeps showing the price it was created against even if the
-            // product's price changes later.
+            // Keep the original product price if the catalogue price changes later.
             $table->decimal('current_price', 10, 2);
             $table->decimal('offer_price', 10, 2);
             $table->decimal('discount_percentage', 5, 2);
@@ -33,9 +27,9 @@ return new class extends Migration
             $table->dateTime('end_date');
             $table->unsignedInteger('display_duration')->default(10); // seconds
             $table->string('priority')->default('normal'); // high | normal | low
-            $table->string('status')->default('scheduled'); // scheduled | active | paused | expired
+            $table->string('status')->default('scheduled');
             $table->boolean('is_featured')->default(false);
-            $table->string('target_screen')->default('customer_display'); // customer_display | dashboard_banner | both
+            $table->string('target_screen')->default('customer_display');
             $table->unsignedInteger('display_order')->default(0);
             $table->unsignedInteger('display_count')->default(0);
 
@@ -46,9 +40,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('promotions');

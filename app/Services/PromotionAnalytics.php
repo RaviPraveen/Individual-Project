@@ -6,9 +6,6 @@ use App\Models\Promotion;
 use App\Models\SaleItem;
 use Illuminate\Support\Collection;
 
-/**
- * Calculates performance metrics and conversion estimates for active promotions.
- */
 class PromotionAnalytics
 {
     public function metricsFor(Promotion $promotion): array
@@ -35,9 +32,6 @@ class PromotionAnalytics
         ];
     }
 
-    /**
-     * @return Collection<int, array{promotion: Promotion, metrics: array}>
-     */
     public function allWithMetrics(): Collection
     {
         return Promotion::with('product')->get()

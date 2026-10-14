@@ -39,7 +39,7 @@ class AiChatController extends Controller
             'conversationGroups' => $this->groupConversations($conversations),
             'activeConversation' => $active,
             'messages' => $messages,
-            'geminiConfigured' => $this->aiService->isConfigured(),
+            'aiConfigured' => $this->aiService->isConfigured(),
             'suggestions' => $this->suggestionChips($isAdmin),
         ]);
     }
@@ -218,10 +218,7 @@ class AiChatController extends Controller
         ]);
     }
 
-    /**
-     * Determines whether to display a database-driven statistical widget
-     * alongside the AI assistant response based on message content.
-     */
+    // Choose a database widget from the question's keywords.
     private function buildWidget(string $message, bool $isAdmin): ?array
     {
         $text = mb_strtolower($message);

@@ -79,6 +79,8 @@ class ReturnController extends Controller
             'subtotal' => (float) $sale->subtotal,
             'discount' => (float) $sale->discount,
             'tax' => (float) $sale->tax,
+            'refund_tax_percent' => (float) Setting::get('tax_rate', config('billing.tax_percent')),
+            'redemption_value' => (float) $sale->redemption_value,
             'total' => (float) $sale->total,
             'items' => $items,
         ]);
@@ -107,19 +109,17 @@ class ReturnController extends Controller
 
                 $taxPercent = (float) Setting::get('tax_rate', config('billing.tax_percent'));
                 $discountRatio = $sale->subtotal > 0 ? ((float) $sale->discount / (float) $sale->subtotal) : 0;
-                // Uses the value actually redeemed at time of sale (not the
-                // current BillingSetting rate) so a refund stays correct
-                // even if the admin has since changed the redeem rate.
+                // Use the original redemption value if the points rate has changed.
                 $redemptionValue = (float) $sale->redemption_value;
 
                 $subtotalRefunded = 0;
                 $discountRefunded = 0;
                 $taxRefunded = 0;
                 $totalRefunded = 0;
-                $lineData = [];
+                $returnItems = [];
 
-                foreach ($requestedItems as $reqItem) {
-                    $saleItem = $sale->items->firstWhere('id', $reqItem['sale_item_id']);
+                foreach ($requestedItems as $requestedItem) {
+                    $saleItem = $sale->items->firstWhere('id', $requestedItem['sale_item_id']);
 
                     if (! $saleItem) {
                         throw new RuntimeException('That item does not belong to this sale.');
@@ -128,11 +128,11 @@ class ReturnController extends Controller
                     $alreadyReturned = (int) $saleItem->returnItems()->sum('quantity');
                     $maxReturnable = $saleItem->quantity - $alreadyReturned;
 
-                    if ($reqItem['quantity'] > $maxReturnable) {
-                        throw new RuntimeException("Cannot return {$reqItem['quantity']}; only {$maxReturnable} left available to return for that item.");
+                    if ($requestedItem['quantity'] > $maxReturnable) {
+                        throw new RuntimeException("Cannot return {$requestedItem['quantity']}; only {$maxReturnable} left available to return for that item.");
                     }
 
-                    $lineRaw = round($saleItem->unit_price * $reqItem['quantity'], 2);
+                    $lineRaw = round($saleItem->unit_price * $requestedItem['quantity'], 2);
                     $lineDiscount = round($lineRaw * $discountRatio, 2);
                     $lineAfterDiscount = $lineRaw - $lineDiscount;
                     $lineTax = round($lineAfterDiscount * $taxPercent / 100, 2);
@@ -146,10 +146,10 @@ class ReturnController extends Controller
                     $taxRefunded += $lineTax;
                     $totalRefunded += $lineTotal;
 
-                    $lineData[] = [
+                    $returnItems[] = [
                         'sale_item_id' => $saleItem->id,
                         'product_id' => $saleItem->product_id,
-                        'quantity' => $reqItem['quantity'],
+                        'quantity' => $requestedItem['quantity'],
                         'unit_price' => $saleItem->unit_price,
                         'line_total' => $lineRaw,
                     ];
@@ -188,7 +188,7 @@ class ReturnController extends Controller
                     'points_clawed_back' => $pointsClawedBack,
                 ]);
 
-                foreach ($lineData as $line) {
+                foreach ($returnItems as $line) {
                     $saleReturn->items()->create($line);
 
                     $product = Product::where('id', $line['product_id'])->lockForUpdate()->first();

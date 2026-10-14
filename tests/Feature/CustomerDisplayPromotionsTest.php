@@ -35,11 +35,11 @@ class CustomerDisplayPromotionsTest extends TestCase
         ], $overrides));
     }
 
-    public function test_admin_is_forbidden_from_the_cashier_only_display_feed(): void
+    public function test_admin_can_read_the_shared_display_feed(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
 
-        $this->actingAs($admin)->get(route('cashier.display.promotions'))->assertForbidden();
+        $this->actingAs($admin)->get(route('cashier.display.promotions'))->assertOk();
     }
 
     public function test_only_currently_active_customer_display_promotions_are_returned(): void

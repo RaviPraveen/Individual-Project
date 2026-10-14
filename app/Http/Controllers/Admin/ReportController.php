@@ -23,7 +23,7 @@ class ReportController extends Controller
     use BuildsReportResponses;
 
     public function __construct(
-        private AiService $gemini,
+        private AiService $aiService,
         private ProductSupplierResolver $supplierResolver,
     ) {}
 
@@ -256,9 +256,6 @@ class ReportController extends Controller
         ]);
     }
 
-    /**
-     * Map total sales quantity per product within the given date window
-     */
     private function slowMovingSalesMap(Carbon $start, Carbon $end): array
     {
         return SaleItem::query()
@@ -270,34 +267,30 @@ class ReportController extends Controller
             ->all();
     }
 
-    /**
-     * Generate an AI summary for slow-moving/dead stock products,
-     * cached for 30 minutes to avoid redundant API calls.
-     */
+    // Cache the recommendation for 30 minutes to limit API requests.
     private function deadStockNarrative(Request $request, $rows): ?string
     {
         if ($rows->isEmpty()) {
             return null;
         }
 
-        $cacheKey = 'dead_stock_narrative_'.$rows->count().'_'.intdiv(now()->minute, 30).'_'.now()->format('YmdH');
+        $days = max(1, (int) $request->input('days', config('billing.dead_stock_days', 30)));
+        $list = $rows->sortByDesc('stock_value')->take(5)->map(function ($row) use ($days) {
+            $supplierName = $row['supplier']['name'] ?? 'unknown supplier';
+            $expiry = $row['is_near_expiry'] ? ', nearing expiry' : '';
 
-        $cached = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($request, $rows) {
-            $top = $rows->sortByDesc('stock_value')->take(5);
+            return "{$row['product']->name}: sold {$row['qty_sold']} in {$days} days, stock value Rs {$row['stock_value']}, usual supplier {$supplierName}{$expiry}";
+        })->implode("\n");
+        $cacheKey = 'dead_stock_narrative_'.md5($list);
 
-            $list = $top->map(function ($row) {
-                $supplierName = $row['supplier']['name'] ?? 'unknown supplier';
-                $expiry = $row['is_near_expiry'] ? ', nearing expiry' : '';
-
-                return "{$row['product']->name}: sold {$row['qty_sold']} in the period, stock value Rs {$row['stock_value']}, usual supplier {$supplierName}{$expiry}";
-            })->implode("\n");
+        $cached = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($request, $list) {
 
             $prompt = 'You are a retail inventory analyst for a Sri Lankan supermarket called Welcome Foodcity. '.
                 'Based ONLY on the following computed slow-moving/dead-stock data, write a short (3-4 sentence) '.
                 'recommendation on which products are the strongest candidates to return to their supplier and why. '.
                 "Do not invent any numbers beyond what is given.\n\n{$list}";
 
-            $narrative = $this->gemini->generate($prompt);
+            $narrative = $this->aiService->generate($prompt);
 
             AiLog::create([
                 'user_id' => $request->user()->id,
@@ -344,11 +337,7 @@ class ReportController extends Controller
         ]);
     }
 
-    /**
-     * Cached per date-range+row-count so repeated visits to the same range
-     * don't re-call the AI service. See DashboardController::businessSummary() for
-     * why a null narrative is cached as '' rather than a literal null.
-     */
+    // Cache by date range and row count. An empty string also caches a failed request.
     private function profitNarrative(Request $request, $rows, Carbon $start, Carbon $end): ?string
     {
         if ($rows->isEmpty()) {
@@ -373,7 +362,7 @@ class ReportController extends Controller
                 "Most profitable products: {$topList}\n".
                 "Least profitable products: {$bottomList}";
 
-            $narrative = $this->gemini->generate($prompt);
+            $narrative = $this->aiService->generate($prompt);
 
             AiLog::create([
                 'user_id' => $request->user()->id,

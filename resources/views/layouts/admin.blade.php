@@ -7,7 +7,6 @@
 
         <title>{{ config('app.name', 'Foodcity POS') }} — Admin</title>
 
-        <!-- Fonts & Icons -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -16,14 +15,12 @@
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
-        <!-- Centralized SaaS POS Design System -->
         <link href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}" rel="stylesheet">
     </head>
     <body>
         <div id="pos-flash-data" data-success="{{ session('success') }}" data-error="{{ session('error') }}" hidden></div>
 
         <div class="pos-shell">
-            <!-- Fixed Premium Admin Vertical Sidebar -->
             <aside class="pos-sidebar">
                 <a href="{{ route('admin.dashboard') }}" class="brand">
                     <span class="brand-mark">🛒</span>
@@ -108,7 +105,6 @@
                 </div>
             </aside>
 
-            <!-- Main Content Shell -->
             <div class="pos-content-wrapper flex-grow-1 min-w-0 d-flex flex-column">
                 @include('layouts.navigation', ['showSidebarToggle' => true])
 
@@ -126,7 +122,6 @@
 
         <div class="toast-container position-fixed bottom-0 end-0 p-3" id="pos-toast-container" style="z-index:1080;"></div>
 
-        <!-- JS Libraries -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>

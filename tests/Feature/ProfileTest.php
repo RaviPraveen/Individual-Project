@@ -61,11 +61,6 @@ class ProfileTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
-    // Self-service account deletion was deliberately removed: this system
-    // manages staff accounts centrally through admin-only User Management
-    // (create/edit/deactivate/delete), not self-deletion — see UserTest.php
-    // for the account-lifecycle coverage that replaces it.
-
     public function test_user_can_update_their_own_password(): void
     {
         $user = User::factory()->create();

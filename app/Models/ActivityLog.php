@@ -26,11 +26,6 @@ class ActivityLog extends Model
         return $this->morphTo();
     }
 
-    /**
-     * Convenience factory used by ActivityLogger — kept on the model too
-     * so a call site can log directly without pulling in the service if
-     * it only needs the bare minimum.
-     */
     public static function record(?int $userId, string $action, string $description, $subject = null): self
     {
         return static::create([

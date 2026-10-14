@@ -89,6 +89,23 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
+### Gmail mail setup
+
+The system uses Laravel mail for customer receipts, password reset links, and verification emails. To send them from Gmail, turn on [2-Step Verification](https://myaccount.google.com/security) and create a [Google App Password](https://myaccount.google.com/apppasswords). Edit `.env` with your own Gmail address and App Password:
+
+```env
+MAIL_MAILER=smtp
+MAIL_SCHEME=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-address@gmail.com
+MAIL_PASSWORD=your-16-character-app-password
+MAIL_FROM_ADDRESS=your-address@gmail.com
+MAIL_FROM_NAME="Welcome Foodcity"
+```
+
+Use the same Gmail address for `MAIL_USERNAME` and `MAIL_FROM_ADDRESS`. Enter the App Password without spaces. Keep it in `.env`, which is excluded from Git; do not use your normal Gmail password. Run `php artisan config:clear` after saving `.env`. To check delivery, request a password reset for a staff account with that email, then check the inbox and spam folder. A checkout also sends a receipt when the chosen customer has an email address.
+
 ### Step 3: Install Dependencies
 ```bash
 composer install

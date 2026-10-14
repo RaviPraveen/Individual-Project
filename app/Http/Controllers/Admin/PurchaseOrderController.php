@@ -32,8 +32,7 @@ class PurchaseOrderController extends Controller
         $suppliers = Supplier::orderBy('name')->get();
         $products = Product::where('is_active', true)->orderBy('name')->get();
 
-        // Optional prefill from the Smart Reorder Assistant, passed as a
-        // query string (?supplier_id=..&items[0][product_id]=..&items[0][quantity]=..).
+        // Prefill the order from the reorder assistant's query parameters.
         $prefill = [
             'supplier_id' => $request->query('supplier_id'),
             'items' => collect($request->query('items', []))
@@ -86,14 +85,7 @@ class PurchaseOrderController extends Controller
         return view('admin.purchase-orders.show', compact('purchaseOrder'));
     }
 
-    /**
-     * Locks the purchase order row (and re-checks its status inside the
-     * transaction) so two concurrent "mark received" clicks on the same PO
-     * can't both pass the pending-status check and double-restock it. The
-     * product rows are locked too before incrementing, so a receive can't
-     * read stale stock alongside a concurrent sale/return/other receipt on
-     * the same product.
-     */
+    // Lock the order and products to prevent duplicate receipts and stock conflicts.
     public function markReceived(Request $request, PurchaseOrder $purchaseOrder): RedirectResponse
     {
         try {

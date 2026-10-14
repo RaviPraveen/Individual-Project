@@ -8,7 +8,7 @@
                 <div class="text-muted small">{{ __('Scan items, process payments, and serve customers with maximum speed.') }}</div>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-outline-secondary btn-sm rounded-2" id="open-display-btn" onclick="window.open('{{ route('cashier.display.show') }}', 'customer_display', 'width=1200,height=800,resizable=yes,scrollbars=yes');">
+                <button type="button" class="btn btn-outline-secondary btn-sm rounded-2" id="open-display-btn">
                     <i class="bi bi-display me-1"></i> {{ __('Customer Display') }}
                 </button>
             </div>
@@ -24,10 +24,8 @@
         <input type="hidden" name="points_to_redeem" id="points_to_redeem_input_hidden" value="0">
 
         <div class="row g-4">
-            <!-- LEFT & CENTER: Barcode Search & Dominant Shopping Cart (col-lg-8) -->
             <div class="col-lg-8">
-                @if ($geminiConfigured)
-                    <!-- Compact AI Quick Order Drawer -->
+                @if ($aiConfigured)
                     <div class="card border-0 shadow-xs mb-3 bg-white" style="border: 1px solid #DBEAFE !important;">
                         <div class="card-body p-2.5">
                             <div class="d-flex align-items-center justify-content-between mb-1.5">
@@ -55,7 +53,6 @@
                     </div>
                 @endif
 
-                <!-- Product Barcode Scan & Live Search Input -->
                 <div class="card mb-4 shadow-sm border-0">
                     <div class="card-body p-3 position-relative">
                         <div class="d-flex justify-content-between align-items-center mb-1.5">
@@ -81,7 +78,6 @@
                     </div>
                 </div>
 
-                <!-- Dominant Shopping Cart Table (Min-Height 500px) -->
                 <div class="card shadow-sm border-0 mb-4" style="min-height: 480px;">
                     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
                         <div class="fw-bold h5 mb-0 text-dark d-flex align-items-center gap-2">
@@ -121,11 +117,9 @@
                 </div>
             </div>
 
-            <!-- RIGHT: Sticky Payment Panel (col-lg-4) -->
             <div class="col-lg-4">
                 <div class="card shadow-md border-0 sticky-top" style="top: 80px;">
                     <div class="card-body p-4">
-                        <!-- Customer Loyalty Section -->
                         <div class="mb-3">
                             <label for="customer-search" class="form-label fw-bold text-dark d-flex align-items-center justify-content-between mb-1.5">
                                 <span><i class="bi bi-person-badge me-1 text-primary"></i> {{ __('Customer Loyalty') }}</span>
@@ -136,7 +130,6 @@
                                 <div id="customer-results" class="list-group position-absolute w-100 shadow-lg rounded-3 pos-search-dropdown" style="z-index: 1050; max-height: 280px; overflow-y: auto;"></div>
                             </div>
 
-                            <!-- Selected Customer Panel -->
                             <div id="customer-selected-panel" class="d-none mt-3 p-3 pos-points-panel">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
@@ -158,16 +151,15 @@
                                 </div>
                             </div>
 
-                            <!-- Quick Create Customer Panel -->
                             <div id="customer-quick-create" class="d-none mt-3 p-3 bg-light rounded-3 border">
                                 <div class="small fw-bold text-dark mb-2"><i class="bi bi-person-plus text-primary me-1"></i> {{ __('Enroll New Member') }}</div>
                                 <input type="text" id="quick-create-name" class="form-control form-control-sm mb-2" placeholder="{{ __('Full name') }}">
                                 <input type="text" id="quick-create-phone" class="form-control form-control-sm mb-2" placeholder="{{ __('Phone number') }}">
+                                <input type="email" id="quick-create-email" class="form-control form-control-sm mb-2" placeholder="{{ __('Email address (optional)') }}" aria-label="{{ __('Email address (optional)') }}">
                                 <button type="button" class="btn btn-sm btn-primary w-100 fw-bold rounded-2" id="quick-create-btn">{{ __('Enroll & Select') }}</button>
                             </div>
                         </div>
 
-                        <!-- Discount % Input -->
                         <div class="mb-3">
                             <label for="discount_percent" class="form-label fw-bold text-dark d-flex justify-content-between mb-1">
                                 <span><i class="bi bi-percent me-1 text-primary"></i> {{ __('Discount %') }}</span>
@@ -176,7 +168,6 @@
                             <input type="number" name="discount_percent" id="discount_percent" class="form-control fw-bold" min="0" max="{{ $maxDiscountPercent }}" step="0.01" value="0">
                         </div>
 
-                        <!-- Payment Method Selector -->
                         <div class="mb-3">
                             <label for="payment_method" class="form-label fw-bold text-dark mb-1">
                                 <i class="bi bi-credit-card me-1 text-primary"></i> {{ __('Payment Method') }}
@@ -199,7 +190,6 @@
 
                         <hr class="my-3">
 
-                        <!-- Breakdown Summary Lines -->
                         <div class="d-flex justify-content-between text-muted mb-1 small">
                             <span>{{ __('Subtotal') }}</span>
                             <span id="summary-subtotal" class="fw-semibold text-dark">0.00</span>
@@ -221,7 +211,6 @@
                             <span id="summary-bag-fee" class="fw-semibold text-dark">0.00</span>
                         </div>
 
-                        <!-- Dominant Total Amount Card -->
                         <div class="pos-total-card mb-3">
                             <div class="d-flex justify-content-between align-items-baseline">
                                 <span class="fw-bold text-uppercase small" style="letter-spacing:0.08em; opacity: 0.9;">{{ __('TOTAL AMOUNT') }}</span>
@@ -229,7 +218,6 @@
                             </div>
                         </div>
 
-                        <!-- 60px Height Primary Checkout Action Button -->
                         <button type="submit" class="btn pos-checkout-btn w-100" id="complete-sale-btn">
                             <i class="bi bi-check-circle-fill me-2"></i> {{ __('Complete Sale') }}
                         </button>
@@ -269,7 +257,7 @@
         const wantsBagInput = document.getElementById('wants_bag_input');
 
         function fetchJson(url, options) {
-            return fetch(url, Object.assign({ headers: { 'Accept': 'application/json' } }, options)).then(r => r.json().then(data => ({ ok: r.ok, data })));
+            return fetch(url, { ...options, headers: { 'Accept': 'application/json', ...options?.headers } }).then(r => r.json().then(data => ({ ok: r.ok, data })));
         }
 
         function debounce(fn, delay) {
@@ -378,8 +366,7 @@
             if (e.key === 'Enter') {
                 e.preventDefault();
 
-                // An item highlighted via arrow keys always wins over the
-                // exact-match-by-typed-text heuristic below.
+                // Use the keyboard selection before trying an exact text match.
                 if (highlightedIndex >= 0 && items[highlightedIndex]) {
                     items[highlightedIndex].click();
                     return;
@@ -404,26 +391,28 @@
             }
         });
 
-        function addToCart(product) {
+        function addToCart(product, quantity = 1) {
+            if (product.stock_qty < 1) {
+                window.posToast ? window.posToast('This product is out of stock.', 'danger') : alert('Out of stock.');
+                return;
+            }
             const existing = cart.find(c => c.product_id === product.id);
+            const requestedQty = (existing ? existing.quantity : 0) + quantity;
+            const newQty = Math.min(requestedQty, product.stock_qty);
+            if (requestedQty > product.stock_qty) {
+                window.posToast ? window.posToast('Quantity limited to available stock.', 'warning') : alert('Maximum stock reached.');
+            }
             if (existing) {
-                if (existing.quantity < product.stock_qty) {
-                    existing.quantity++;
-                } else {
-                    window.posToast ? window.posToast('Maximum available stock reached.', 'warning') : alert('Maximum stock reached.');
-                }
+                existing.quantity = newQty;
+                existing.stock_qty = product.stock_qty;
             } else {
-                if (product.stock_qty < 1) {
-                    window.posToast ? window.posToast('This product is out of stock.', 'danger') : alert('Out of stock.');
-                    return;
-                }
                 cart.push({
                     product_id: product.id,
                     name: product.name,
                     sku: product.sku,
                     unit_price: parseFloat(product.selling_price),
                     stock_qty: product.stock_qty,
-                    quantity: 1,
+                    quantity: newQty,
                 });
             }
             renderCart();
@@ -569,7 +558,7 @@
             });
         }
 
-        /* ---------- Customer Display Sync ---------- */
+        // Sync cart totals with the customer display.
         const displaySyncUrl = '{{ route('cashier.display.sync') }}';
         const displayUrl = '{{ route('cashier.display.show') }}';
         let displaySyncTimer = null;
@@ -653,6 +642,7 @@
                 if (customers.length === 0) {
                     document.getElementById('quick-create-name').value = '';
                     document.getElementById('quick-create-phone').value = term;
+                    document.getElementById('quick-create-email').value = '';
                     customerQuickCreate.classList.remove('d-none');
                     return;
                 }
@@ -671,6 +661,7 @@
         document.getElementById('quick-create-btn').addEventListener('click', () => {
             const name = document.getElementById('quick-create-name').value.trim();
             const phone = document.getElementById('quick-create-phone').value.trim();
+            const email = document.getElementById('quick-create-email').value.trim();
 
             if (!name || !phone) {
                 alert('{{ __('Please enter both name and phone number.') }}');
@@ -682,7 +673,7 @@
             fetchJson(quickCreateCustomerUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-                body: JSON.stringify({ name, phone }),
+                body: JSON.stringify({ name, phone, email }),
             }).then(({ ok, data }) => {
                 if (!ok) {
                     const message = data.errors ? Object.values(data.errors).flat().join(' ') : '{{ __('Could not create customer.') }}';
@@ -700,7 +691,7 @@
             }
         });
 
-        /* ---------- AI Quick Order ---------- */
+        // Preview AI order matches before adding them to the cart.
         const aiOrderTextInput = document.getElementById('ai-order-text');
         const aiOrderParseBtn = document.getElementById('ai-order-parse-btn');
 
@@ -799,12 +790,7 @@
                         sku: item.sku,
                         selling_price: item.selling_price,
                         stock_qty: item.stock_qty,
-                    });
-
-                    const cartItem = cart.find(c => c.product_id === item.product_id);
-                    if (cartItem) {
-                        cartItem.quantity = Math.max(1, Math.min(item.quantity, item.stock_qty));
-                    }
+                    }, item.quantity);
                 });
                 renderCart();
                 window.posToast ? window.posToast('Added items to cart from AI Quick Order.', 'success') : null;
@@ -824,7 +810,6 @@
         renderCart();
     </script>
 
-    <!-- Camera Barcode Scanner (additive — existing USB/Bluetooth/keyboard-wedge scanning above is untouched) -->
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="{{ asset('js/barcode-scanner.js') }}"></script>
     <script>

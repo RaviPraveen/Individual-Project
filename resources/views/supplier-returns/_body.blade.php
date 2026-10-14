@@ -1,10 +1,3 @@
-{{--
-    Printable supplier return note, mirroring resources/views/receipts/_body.blade.php:
-    table/inline-block only (dompdf doesn't support flexbox/grid).
-
-    Expects: $settings (ReceiptSetting) and $supplierReturn (SupplierReturn,
-    with items.product, supplier, creator eager-loaded).
---}}
 <div style="width: 480px; margin: 16px auto; font-family: {{ $settings->font_family }}; font-size: 13px; color: #1A2420;">
     <div style="text-align: center; margin-bottom: 8px;">
         <div style="font-weight: 700; font-size: 16px;">{{ $settings->shop_name }}</div>

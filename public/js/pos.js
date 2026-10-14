@@ -2,7 +2,7 @@
   'use strict';
 
   document.addEventListener('DOMContentLoaded', function () {
-    /* ---------- live browser local date & time ticker (with seconds) ---------- */
+    // Update the displayed date and time.
     function updateLiveDateTime() {
       var dateEl = document.getElementById('pos-live-date');
       var clockEl = document.getElementById('pos-live-clock');
@@ -24,7 +24,7 @@
     updateLiveDateTime();
     setInterval(updateLiveDateTime, 1000);
 
-    /* ---------- toast bridge: turn session flash messages into toasts ---------- */
+    // Show session messages as toasts.
     var flashEl = document.getElementById('pos-flash-data');
     if (flashEl) {
       var success = flashEl.dataset.success;
@@ -33,7 +33,6 @@
       if (error && error !== 'null' && error !== '') showToast(error, 'danger');
     }
 
-    /* ---------- staggered entrance for stat/quick-action cards ---------- */
     var animated = document.querySelectorAll('.pos-stat-card, .quick-action, .card');
     animated.forEach(function (el, i) {
       if (!el.classList.contains('pos-animate-in')) {
@@ -42,7 +41,7 @@
       }
     });
 
-    /* ---------- sidebar toggle (mobile) ---------- */
+    // Mobile sidebar.
     var sidebarToggle = document.getElementById('pos-sidebar-toggle');
     var sidebar = document.querySelector('.pos-sidebar');
     if (sidebarToggle && sidebar) {
@@ -56,7 +55,6 @@
       });
     }
 
-    /* ---------- SweetAlert2 global alert/confirm helpers ---------- */
     if (window.Swal) {
       window.posAlert = function(title, text, icon) {
         return Swal.fire({
@@ -71,8 +69,6 @@
         });
       };
 
-      // Resolves true/false — intended for `if (await window.posConfirm(...))`
-      // ahead of a destructive/state-changing form submit.
       window.posConfirm = function(title, text, icon) {
         return Swal.fire({
           title: title || '',
@@ -91,10 +87,7 @@
         }).then(function (result) { return result.isConfirmed; });
       };
 
-      // Wire up any form/button carrying data-confirm="..." to a SweetAlert2
-      // confirmation instead of the native confirm() dialog. Forms submit
-      // themselves on confirm; plain buttons fire a 'pos-confirmed' event
-      // so a page-specific handler can act on it.
+      // Submit forms after confirmation, or notify the page's button handler.
       document.querySelectorAll('[data-confirm]').forEach(function (el) {
         el.addEventListener('click', function (e) {
           if (el.dataset.confirmed === '1') return;
@@ -117,7 +110,7 @@
     }
   });
 
-  /* ---------- toast helper, reusable for JS-triggered notices ---------- */
+  // Shared toast messages.
   var TOAST_ICONS = {
     success: 'bi-check-circle-fill',
     danger: 'bi-x-circle-fill',

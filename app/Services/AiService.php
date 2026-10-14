@@ -6,9 +6,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-/**
- * Service to handle Hugging Face API requests for text generation and poster images.
- */
+// Hugging Face text and image requests.
 class AiService
 {
     public function isConfigured(): bool
@@ -16,12 +14,7 @@ class AiService
         return filled(config('services.huggingface.key'));
     }
 
-    /**
-     * Send a prompt to the configured model and return the generated text,
-     * or null if the API is not configured, unreachable, or returns an
-     * error. Callers must treat null as "AI unavailable" and fall back to
-     * non-AI content — this method never throws.
-     */
+    // Return null when the service is unavailable so the caller can use a fallback.
     public function generate(string $prompt): ?string
     {
         if (! $this->isConfigured()) {
@@ -57,10 +50,7 @@ class AiService
         }
     }
 
-    /**
-     * Generate poster background image via text-to-image API.
-     * Returns raw image bytes, or null if service is unreachable.
-     */
+    // Return image bytes, or null if generation fails.
     public function generateImage(string $prompt): ?string
     {
         if (! $this->isConfigured()) {

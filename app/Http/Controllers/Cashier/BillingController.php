@@ -39,7 +39,7 @@ class BillingController extends Controller
             'pointsRedeemValue' => (float) $billingSettings->points_redeem_value,
             'pointsEarnPercent' => $billingSettings->earnPercent(),
             'bagFee' => (float) $billingSettings->bag_fee,
-            'geminiConfigured' => $aiService->isConfigured(),
+            'aiConfigured' => $aiService->isConfigured(),
         ]);
     }
 
@@ -48,6 +48,7 @@ class BillingController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:50', 'unique:customers,phone'],
+            'email' => ['nullable', 'email', 'max:255'],
         ]);
 
         $customer = Customer::create($validated);
@@ -112,7 +113,6 @@ class BillingController extends Controller
                 $taxAmount = round(($subtotal - $discountAmount) * $taxPercent / 100, 2);
                 $totalBeforePoints = $subtotal - $discountAmount + $taxAmount;
 
-                // Calculate points redemption
                 $redeemValuePerPoint = (float) $billingSettings->points_redeem_value;
                 $pointsRequested = (int) ($validated['points_to_redeem'] ?? 0);
                 $pointsRequested = $customer ? min($pointsRequested, $customer->points_balance) : 0;
@@ -125,7 +125,7 @@ class BillingController extends Controller
                 $pointsEarnPercent = $billingSettings->earnPercent();
                 $pointsEarned = $customer ? (int) floor($total * $pointsEarnPercent / 100) : 0;
 
-                // Add bag fee if requested
+                // Bag fees do not earn points.
                 $bagFee = $request->boolean('wants_bag') ? (float) $billingSettings->bag_fee : 0;
                 $total += $bagFee;
 
@@ -289,13 +289,7 @@ class BillingController extends Controller
         return response()->json(['suggestion' => $suggestion]);
     }
 
-    /**
-     * Parses a free-text order ("2kg rice, 1 milk powder, 3 sugar") into
-     * real product_id+quantity pairs by giving the AI service the exact active
-     * product catalog and requiring a strict JSON response. Never invents
-     * products — anything not confidently matched in the catalog is
-     * dropped rather than guessed.
-     */
+    // Match the generated order to the active catalogue and cap quantities at available stock.
     public function parseOrderText(Request $request, AiService $aiService): JsonResponse
     {
         $validated = $request->validate([
@@ -318,27 +312,27 @@ class BillingController extends Controller
             "CATALOG:\n{$catalog}\n\n".
             "ORDER TEXT: \"{$validated['text']}\"";
 
-        $raw = $aiService->generate($prompt);
+        $aiResponse = $aiService->generate($prompt);
 
         AiLog::create([
             'user_id' => $request->user()->id,
             'query' => "Natural-language order parse: \"{$validated['text']}\"",
-            'response' => $raw ?? '[AI unavailable — parse not attempted]',
+            'response' => $aiResponse ?? '[AI unavailable — parse not attempted]',
         ]);
 
-        if ($raw === null) {
+        if ($aiResponse === null) {
             return response()->json(['configured' => true, 'error' => 'The AI assistant is currently unavailable.', 'items' => []]);
         }
 
-        $parsed = $this->extractJsonArray($raw);
+        $parsedItems = $this->extractJsonArray($aiResponse);
 
-        if ($parsed === null) {
+        if ($parsedItems === null) {
             return response()->json(['configured' => true, 'error' => "Couldn't understand that order — try rephrasing or add items manually.", 'items' => []]);
         }
 
         $productsById = $products->keyBy('id');
 
-        $items = collect($parsed)
+        $items = collect($parsedItems)
             ->filter(fn ($row) => is_array($row) && isset($row['product_id']) && $productsById->has((int) $row['product_id']))
             ->map(function ($row) use ($productsById) {
                 $product = $productsById->get((int) $row['product_id']);
@@ -359,9 +353,9 @@ class BillingController extends Controller
         return response()->json(['configured' => true, 'items' => $items]);
     }
 
-    private function extractJsonArray(string $raw): ?array
+    private function extractJsonArray(string $aiResponse): ?array
     {
-        $cleaned = trim(preg_replace('/^```(?:json)?\s*|\s*```$/i', '', trim($raw)));
+        $cleaned = trim(preg_replace('/^```(?:json)?\s*|\s*```$/i', '', trim($aiResponse)));
         $decoded = json_decode($cleaned, true);
 
         return is_array($decoded) ? $decoded : null;

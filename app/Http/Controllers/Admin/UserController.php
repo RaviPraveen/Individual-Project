@@ -13,7 +13,6 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    // Display all users
     public function index(Request $request): View
     {
         $users = User::query()
@@ -30,7 +29,6 @@ class UserController extends Controller
         return view('admin.users.index', compact('users'));
     }
 
-    // Create new user
     public function create(): View
     {
         return view('admin.users.create');
@@ -56,7 +54,6 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
     }
 
-    // Edit user details
     public function edit(User $user): View
     {
         return view('admin.users.edit', compact('user'));
@@ -74,7 +71,7 @@ class UserController extends Controller
 
         $isActive = $request->boolean('is_active', true);
 
-        // Safeguard: cannot demote or deactivate own account
+        // Prevent an admin from removing their own access.
         if ($user->id === $request->user()->id) {
             if ($validated['role'] !== 'admin') {
                 return back()->with('error', 'You cannot change your own role.');
@@ -84,7 +81,7 @@ class UserController extends Controller
             }
         }
 
-        // Safeguard: must always have at least one active admin
+        // Keep at least one active admin.
         if ($user->role === 'admin' && ($validated['role'] !== 'admin' || ! $isActive)) {
             $otherActiveAdmins = User::where('role', 'admin')
                 ->where('is_active', true)
@@ -112,15 +109,14 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
-    // Delete user
     public function destroy(Request $request, User $user): RedirectResponse
     {
-        // Safeguard: cannot delete own account
+        // Prevent deleting the signed-in account.
         if ($user->id === $request->user()->id) {
             return back()->with('error', 'You cannot delete your own account.');
         }
 
-        // Safeguard: must always have at least one active admin
+        // Keep at least one active admin.
         if ($user->role === 'admin' && $user->is_active) {
             $otherActiveAdmins = User::where('role', 'admin')
                 ->where('is_active', true)
@@ -132,7 +128,7 @@ class UserController extends Controller
             }
         }
 
-        // Soft-delete pattern: deactivate if the user has related records
+        // Deactivate users with transaction history.
         if ($user->hasRelatedRecords()) {
             $user->update(['is_active' => false]);
 
@@ -145,7 +141,6 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User deleted.');
     }
 
-    // Force password reset
     public function resetPassword(Request $request, User $user): RedirectResponse
     {
         $request->validate([

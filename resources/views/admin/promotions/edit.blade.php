@@ -19,6 +19,7 @@
             @endif
         </div>
         <div class="card-body">
+            <p class="small text-muted">{{ __('Save changes to the product, title, description or prices before generating a poster. These changes clear the previous poster.') }}</p>
             <div class="row g-4 align-items-start">
                 <div class="col-md-5">
                     <div class="text-muted small mb-2 fw-semibold text-uppercase" style="letter-spacing:0.05em;font-size:0.7rem;">{{ __('Live Poster') }}</div>
@@ -111,6 +112,19 @@
             const skeleton = document.getElementById('poster-skeleton');
             const previewWrap = document.getElementById('poster-preview-wrap');
             const previewNote = document.getElementById('poster-preview-note');
+            const savedDetails = @json($promotion->posterDetails());
+
+            function hasUnsavedPosterDetails() {
+                const changed = ['product_id', 'title', 'description', 'offer_price'].some(key => {
+                    const value = document.getElementById(key).value.trim();
+                    return key === 'product_id' || key === 'offer_price'
+                        ? Number(value) !== Number(savedDetails[key]) : value !== savedDetails[key];
+                });
+                if (changed) {
+                    window.posToast('Save the promotion changes before generating or approving a poster.', 'warning');
+                }
+                return changed;
+            }
 
             function setPreviewImage(url) {
                 document.getElementById('poster-preview-empty')?.remove();
@@ -129,6 +143,7 @@
             }
 
             btnGenerate.addEventListener('click', function () {
+                if (hasUnsavedPosterDetails()) return;
                 btnGenerate.disabled = true;
                 skeleton.classList.remove('d-none');
                 document.getElementById('poster-preview-img')?.classList.add('d-none');
@@ -153,16 +168,16 @@
                 });
             });
 
-            // These update the DOM directly rather than reloading the page —
-            // a reload's fetch() would silently follow the controller's
-            // back() redirect and consume the one-shot flash message before
-            // the reload's own request ever saw it, swallowing the toast.
+            // Update the preview and show a toast without reloading the page.
             btnApprove.addEventListener('click', function () {
+                if (hasUnsavedPosterDetails()) return;
                 fetch(approveUrl, {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                    redirect: 'manual',
-                }).then(() => {
+                }).then(r => r.json().then(data => {
+                    if (!r.ok) throw new Error(data.message || 'Could not approve the poster.');
+                    return data;
+                })).then(() => {
                     const pendingSrc = document.getElementById('poster-preview-img')?.src;
                     if (pendingSrc) {
                         let liveImg = document.getElementById('live-poster-img');
@@ -183,6 +198,8 @@
                     btnDiscard.classList.add('d-none');
                     btnDownloadPreview.classList.add('d-none');
                     window.posToast ? window.posToast('{{ __('Poster approved and is now live.') }}', 'success') : null;
+                }).catch(error => {
+                    window.posToast(error.message, 'danger');
                 });
             });
 
@@ -202,18 +219,7 @@
                 });
             });
 
-            // btn-delete-live isn't wrapped in its own <form> (it sits above
-            // the promotion edit form, not inside it), so pos.js's global
-            // data-confirm handler falls through to its "plain button" path
-            // and dispatches this custom event instead of submitting a form.
-            // That handler also sets el.dataset.confirmed = '1' permanently
-            // after the first confirm and never clears it — invisible for
-            // form-based buttons (the page always reloads after submit,
-            // resetting the flag for free) but it would silently no-op a
-            // second click here since this button never reloads the page.
-            // Clear it back once this handler has run so Generate ->
-            // Approve -> Delete -> Generate -> Approve -> Delete keeps
-            // working across the same page load.
+            // Handle pos.js confirmation and reset the flag so the button can be reused.
             btnDeleteLive.addEventListener('pos-confirmed', function () {
                 fetch(destroyLiveUrl, {
                     method: 'DELETE',

@@ -16,7 +16,6 @@
         </div>
     </x-slot>
 
-    <!-- Top Key Metrics Cards -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-lg-3">
             <x-stat-card icon="bi-cash-stack" tone="success" :label="__('Today\'s Revenue')" :value="'Rs '.number_format($stats['today_total'], 2)" />
@@ -32,7 +31,6 @@
         </div>
     </div>
 
-    <!-- AI Business Narrative Card & Top Category -->
     <div class="row g-3 mb-4">
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #EEF2FF 0%, #FFFFFF 100%); border: 1px solid #C7D2FE !important;">
@@ -71,7 +69,6 @@
         </div>
     </div>
 
-    <!-- Charts Row -->
     <div class="row g-3 mb-4">
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm h-100">
@@ -104,7 +101,6 @@
         </div>
     </div>
 
-    <!-- Secondary Counters -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-lg-3">
             <x-stat-card icon="bi-box-seam" tone="primary" :label="__('Active Products')" :value="$stats['products']" />
@@ -120,7 +116,6 @@
         </div>
     </div>
 
-    <!-- Promotions Widgets -->
     <div class="d-flex align-items-center justify-content-between mb-2">
         <h3 class="h6 fw-bold text-dark mb-0"><i class="bi bi-megaphone text-primary me-1.5"></i>{{ __('Promotions') }}</h3>
         <a href="{{ route('admin.promotions.index') }}" class="small fw-semibold text-decoration-none">{{ __('Open Promotion Manager') }} &rarr;</a>

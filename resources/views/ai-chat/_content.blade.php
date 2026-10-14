@@ -1,11 +1,5 @@
-{{--
-    Redesigned Foodcity AI Copilot Interface (ChatGPT / Claude / Gemini Style)
-    Preserves all backend routes, variables, and API contracts.
---}}
 <div class="ai-copilot-shell" id="ai-chat-shell">
-    <!-- Left Sidebar (280px) -->
     <aside class="ai-copilot-sidebar" id="ai-chat-sidebar">
-        <!-- Logo & Header -->
         <div class="ai-sidebar-header">
             <div class="d-flex align-items-center gap-2.5">
                 <span class="ai-copilot-mark">✨</span>
@@ -16,13 +10,11 @@
             </div>
         </div>
 
-        <!-- New Chat Action -->
         <button type="button" class="btn ai-btn-new-chat w-100" id="ai-new-chat-btn">
             <i class="bi bi-plus-lg fs-5"></i>
             <span>{{ __('New Chat') }}</span>
         </button>
 
-        <!-- Search Conversations Input -->
         <div class="ai-search-box mt-3 mb-2">
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-transparent border-0 text-muted pe-1"><i class="bi bi-search"></i></span>
@@ -30,7 +22,6 @@
             </div>
         </div>
 
-        <!-- Conversation History List -->
         <div class="ai-chat-history flex-grow-1 overflow-auto" id="ai-chat-history">
             @forelse ($conversationGroups as $groupLabel => $conversations)
                 <div class="ai-history-group-label">{{ __($groupLabel) }}</div>
@@ -50,9 +41,7 @@
         </div>
     </aside>
 
-    <!-- Main Chat Workspace -->
     <div class="ai-copilot-main d-flex flex-column">
-        <!-- Top Workspace Bar -->
         <header class="ai-copilot-header bg-white">
             <div class="d-flex align-items-center gap-3">
                 <button type="button" class="btn btn-sm btn-outline-secondary ai-sidebar-toggle d-lg-none rounded-pill px-3" id="ai-sidebar-toggle">
@@ -73,16 +62,14 @@
             </div>
         </header>
 
-        @if (! $geminiConfigured)
+        @if (! $aiConfigured)
             <div class="alert alert-warning border-0 bg-warning-subtle text-warning-emphasis m-3 mb-0 py-2.5 px-3 rounded-3 small d-flex align-items-center gap-2">
                 <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-                <div>{{ __('The AI API service is not configured in .env. Add GEMINI_API_KEY to enable live intelligence responses.') }}</div>
+                <div>{{ __('The Hugging Face service is not configured. Contact the administrator to enable the AI assistant.') }}</div>
             </div>
         @endif
 
-        <!-- Conversation Scrollable Viewport -->
         <div class="ai-copilot-messages-viewport" id="ai-chat-messages">
-            <!-- Welcome Hero Screen (Shown when no messages) -->
             <div class="ai-welcome-hero my-auto text-center py-5 {{ $messages->isNotEmpty() ? 'd-none' : '' }}" id="ai-chat-empty">
                 <div class="ai-welcome-badge mb-3">✨</div>
                 <h1 class="h2 fw-extrabold text-dark mb-2">{{ __('Hello, I\'m Foodcity AI Copilot.') }}</h1>
@@ -118,16 +105,13 @@
                 </div>
             </div>
 
-            <!-- Messages Stream List -->
             <div id="ai-messages-list" class="d-flex flex-column gap-4 max-w-4xl mx-auto w-100"></div>
 
-            <!-- Jump to Latest Floating Button -->
             <button type="button" class="btn btn-primary rounded-circle shadow-lg ai-jump-bottom-btn d-none" id="ai-jump-bottom-btn" title="{{ __('Scroll to latest') }}">
                 <i class="bi bi-arrow-down fs-5"></i>
             </button>
         </div>
 
-        <!-- Sticky Bottom Input Deck -->
         <div class="ai-copilot-input-deck">
             <div class="max-w-4xl mx-auto w-100">
                 <form id="ai-chat-form" autocomplete="off">

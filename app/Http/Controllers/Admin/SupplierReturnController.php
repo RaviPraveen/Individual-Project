@@ -97,9 +97,6 @@ class SupplierReturnController extends Controller
         return view('admin.supplier-returns.show', compact('supplierReturn'));
     }
 
-    /**
-     * Complete supplier return and update inventory
-     */
     public function complete(Request $request, SupplierReturn $supplierReturn): RedirectResponse
     {
         try {

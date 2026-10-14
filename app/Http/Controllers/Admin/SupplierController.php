@@ -47,9 +47,9 @@ class SupplierController extends Controller
 
     public function destroy(Supplier $supplier): RedirectResponse
     {
-        if ($supplier->purchaseOrders()->exists()) {
+        if ($supplier->purchaseOrders()->exists() || $supplier->supplierReturns()->exists()) {
             return redirect()->route('admin.suppliers.index')
-                ->with('error', 'Cannot delete a supplier that has purchase orders.');
+                ->with('error', 'Cannot delete a supplier that has purchase orders or returns.');
         }
 
         $supplier->delete();

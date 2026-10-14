@@ -37,12 +37,12 @@ class AdminPosAccessTest extends TestCase
         $this->assertDatabaseHas('sales', ['cashier_id' => $admin->id]);
     }
 
-    public function test_admin_still_cannot_reach_the_cashier_only_dashboard_or_customer_display(): void
+    public function test_admin_can_open_customer_display_but_not_cashier_dashboard(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
 
         $this->actingAs($admin)->get(route('cashier.dashboard'))->assertForbidden();
-        $this->actingAs($admin)->get(route('cashier.display.show'))->assertForbidden();
+        $this->actingAs($admin)->get(route('cashier.display.show'))->assertOk();
     }
 
     public function test_cashier_still_cannot_reach_admin_only_areas(): void

@@ -11,25 +11,15 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         Paginator::useBootstrapFive();
 
-        // Feeds the notification bell in layouts.navigation, which is shared
-        // by both the admin and cashier shells — scoped to admins only since
-        // every current alert type (low stock, pending PO, near-expiry) is
-        // an admin/inventory concern.
+        // Inventory alerts are shown only to admins in the shared navigation.
         View::composer('layouts.navigation', function (\Illuminate\View\View $view) {
             $user = Auth::user();
 

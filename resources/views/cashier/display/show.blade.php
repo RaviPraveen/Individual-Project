@@ -17,18 +17,10 @@
                 background: #F8FAFC;
             }
 
-            /* Panel widths change with the mode — Promotion Mode is 40/60,
-               Billing Mode (a sale is actively being rung up) is 65/35.
-               Only .cd-left's explicit width ever changes; .cd-right is
-               always flex-grow:1 (never its own basis/grow override) and
-               just fills whatever's left — animating flex-basis on BOTH
-               sides while flex-grow also flips between them produces an
-               unpredictable mid-transition blend in some browsers. */
             .cd-left { height: 100vh; display: flex; flex-direction: column; flex: 0 0 auto; width: 40%; transition: width 400ms ease; }
             .cd-right { height: 100vh; flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
             body.mode-billing .cd-left { width: 65%; }
 
-            /* ===== LEFT — brand/welcome (Promotion Mode) or live bill (Billing Mode) ===== */
             .cd-left {
                 background: linear-gradient(160deg, #FFFFFF 0%, #F8FAFC 55%, #EEF6FF 100%);
                 border-right: 1px solid #EEF2F7;
@@ -37,9 +29,6 @@
                 display: none; align-items: center; justify-content: center; gap: 12px;
                 padding: 22px 0 6px; flex-shrink: 0;
             }
-            /* The small top-bar brand mark is only useful once the centred
-               welcome screen (which already shows a large logo) is gone —
-               i.e. once Billing/Thank-you mode takes over the left panel. */
             body.mode-billing .cd-header { display: flex; }
             .cd-header .mark {
                 width: 40px; height: 40px; border-radius: 12px; background: var(--pos-brand-gradient, linear-gradient(135deg,#3B82F6,#2563EB));
@@ -49,9 +38,6 @@
             .cd-header .name { font-size: 1.25rem; font-weight: 800; letter-spacing: .01em; color: #0F172A; }
             .cd-stage { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
-            /* --- Idle / welcome content (Promotion Mode) — brand only, no
-               promo/offer/hours content, all of which already lives on the
-               poster in the right panel. --- */
             .cd-idle { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
             .cd-idle .mark-lg {
                 width: 108px; height: 108px; border-radius: 30px; margin-bottom: 28px; font-size: 3rem;
@@ -63,7 +49,6 @@
             .cd-idle p.cd-idle-subtitle { font-size: 1.05rem; font-weight: 700; color: #2563EB; margin-bottom: 14px; }
             .cd-idle p.tagline { font-size: .95rem; color: #64748B; margin-bottom: 0; }
 
-            /* --- Live bill (Billing Mode) --- */
             .cd-bill { flex: 1; min-height: 0; display: flex; flex-direction: column; }
             .cd-bill-header { padding: 18px 30px 10px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
             .cd-bill-header .customer { font-size: 1.15rem; font-weight: 800; color: #0F172A; }
@@ -81,7 +66,6 @@
                 color: #0F172A; padding-top: 10px; margin-top: 6px; border-top: 1px dashed #E2E8F0;
             }
 
-            /* --- Thank you --- */
             .cd-thanks { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
             .cd-thanks .check {
                 width: 84px; height: 84px; border-radius: 50%; background: #ECFDF5; color: #059669;
@@ -97,13 +81,9 @@
 
             .d-none-cd { display: none !important; }
 
-            /* ===== RIGHT — promotion card ===== */
             .cd-right { background: #F1F5F9; padding: 28px; align-items: center; justify-content: center; }
             body.mode-billing .cd-right { padding: 18px; }
 
-            /* The AI-generated poster already contains the product name,
-               prices, discount and promotion design — this card exists only
-               to frame the image, never to add text on top of it. */
             .cd-promo-card {
                 width: 100%; height: 100%; max-height: 100%; background: #FFFFFF; border-radius: 24px;
                 box-shadow: 0 12px 32px rgba(15,23,42,.08); overflow: hidden;
@@ -116,10 +96,8 @@
                 object-fit: contain; display: block; border-radius: 14px;
             }
 
-            /* Compact padding for Billing Mode's narrower column */
             body.mode-billing .cd-promo-card { padding: 14px; }
 
-            /* --- No active promotion --- */
             .cd-promo-empty {
                 width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
                 text-align: center; padding: 40px; background: #FFFFFF; border-radius: 24px; box-shadow: 0 12px 32px rgba(15,23,42,.06);
@@ -206,10 +184,7 @@
                 Object.entries(stages).forEach(([key, el]) => el.classList.toggle('d-none-cd', key !== name));
             }
 
-            // Billing Mode (wide bill / narrow promo card) is driven purely by
-            // whether a sale is actively being rung up — no backend change
-            // needed, this just reacts to the status the existing poll already
-            // returns.
+            // Widen the bill panel while a sale is active.
             function setMode(mode) {
                 document.body.classList.toggle('mode-billing', mode === 'billing');
             }
@@ -273,11 +248,7 @@
                 return div.innerHTML;
             }
 
-            // "Thank you" is shown for a fixed 5s regardless of how long the
-            // backend keeps the completed-sale cache entry alive (15s, so
-            // there's a repeat of the SAME invoice on the next couple of
-            // polls) — dedupe by invoice_no so it doesn't restart the timer,
-            // then force Promotion Mode locally once the 5s window is up.
+            // Show thanks for 5 seconds. Repeated polls of the same invoice must not restart it.
             let lastCompletedInvoice = null;
             let thankYouTimer = null;
 
@@ -322,16 +293,13 @@
             poll();
             setInterval(poll, 1500);
 
-            /* ---------- Promotion rotation (right panel) ---------- */
             const promoCard = document.getElementById('cd-promo-card');
             const promoEmpty = document.getElementById('cd-promo-empty');
             let playlist = [];
             let playIndex = 0;
             let rotateTimer = null;
 
-            // Featured promotions are simply repeated in the playlist so
-            // they come up roughly twice as often — each item still keeps
-            // its own display_duration, so there's never one global timer.
+            // Repeat featured promotions twice, keeping each promotion's display duration.
             function buildPlaylist(promotions) {
                 const list = [];
                 promotions.forEach(p => {
@@ -348,8 +316,7 @@
                 }).catch(() => {});
             }
 
-            // The AI-generated poster already contains the product name,
-            // prices and discount, so the display only ever swaps the image.
+            // Swap the poster image; its text is already included.
             function showPromo(promo) {
                 promoEmpty.classList.add('d-none-cd');
                 promoCard.classList.remove('show');

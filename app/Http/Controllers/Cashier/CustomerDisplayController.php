@@ -55,13 +55,7 @@ class CustomerDisplayController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    /**
-     * The right-panel rotation feed. Ordering (priority, then featured
-     * first) is a tie-break for promotions with equal claim to airtime —
-     * the actual "featured shows more often" behavior is achieved
-     * client-side by repeating featured entries in the rotation playlist,
-     * since JSON ordering alone can't express repetition.
-     */
+    // The display repeats featured promotions in its rotation playlist.
     public function promotions(): JsonResponse
     {
         Promotion::syncDueStatuses();

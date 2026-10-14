@@ -1,12 +1,4 @@
-/**
- * Shared camera barcode scanner, additive to (never a replacement for) the
- * existing USB/Bluetooth/keyboard-wedge scanner support already wired
- * directly into each page's own product-search input. This module only
- * ever hands the caller a decoded string via the onDetected callback —
- * it never touches product search, cart, or form logic itself.
- *
- * Usage: window.openBarcodeScanner(function (decodedText) { ... });
- */
+// Camera scanner. Pass the decoded barcode to the page's onDetected callback.
 (function () {
     'use strict';
 
@@ -17,7 +9,7 @@
     let cameraIndex = 0;
     let torchOn = false;
 
-    function els() {
+    function scannerElements() {
         return {
             modalEl: document.getElementById('barcode-scan-modal'),
             status: document.getElementById('barcode-scan-status'),
@@ -30,7 +22,7 @@
     }
 
     function setStatus(text) {
-        const { status } = els();
+        const { status } = scannerElements();
         if (status) status.textContent = text;
     }
 
@@ -42,7 +34,7 @@
                 }
                 html5QrCode.clear();
             } catch (e) {
-                // camera may already be stopped — safe to ignore
+                // The camera may already be stopped.
             }
         }
         html5QrCode = null;
@@ -55,12 +47,12 @@
             await html5QrCode.applyVideoConstraints({ advanced: [{ torch: on }] });
             torchOn = on;
         } catch (e) {
-            // torch not supported on this device/browser — ignore
+            // Some cameras do not support the torch setting.
         }
     }
 
     function detectTorchSupport() {
-        const { torchBtn } = els();
+        const { torchBtn } = scannerElements();
         if (!torchBtn || !html5QrCode) return;
         try {
             const capabilities = html5QrCode.getRunningTrackCapabilities();
@@ -75,7 +67,7 @@
     }
 
     function startCamera(cameraId, onDetected) {
-        const { deniedBox, switchBtn } = els();
+        const { deniedBox, switchBtn } = scannerElements();
         if (deniedBox) deniedBox.classList.add('d-none');
         setStatus('Point the camera at a barcode...');
 
@@ -107,8 +99,7 @@
                     });
                 },
                 () => {
-                    // per-frame decode failure — expected constantly while
-                    // searching for a barcode, not an error worth surfacing
+                    // Ignore frames where no barcode is detected.
                 }
             )
             .then(() => {
@@ -124,7 +115,7 @@
     }
 
     function showPermissionDenied(onDetected) {
-        const { deniedBox, retryBtn } = els();
+        const { deniedBox, retryBtn } = scannerElements();
         setStatus('');
         if (deniedBox) deniedBox.classList.remove('d-none');
         if (retryBtn) {
@@ -136,7 +127,7 @@
     }
 
     function closeModal() {
-        const { modalEl } = els();
+        const { modalEl } = scannerElements();
         if (modalEl && window.bootstrap) {
             const instance = window.bootstrap.Modal.getInstance(modalEl);
             if (instance) instance.hide();
@@ -145,7 +136,7 @@
 
     window.openBarcodeScanner = function (onDetected) {
         handled = false;
-        const { modalEl, torchBtn, switchBtn } = els();
+        const { modalEl, torchBtn, switchBtn } = scannerElements();
         if (!modalEl) {
             console.error('Barcode scan modal not found on this page.');
             return;

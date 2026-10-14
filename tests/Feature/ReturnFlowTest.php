@@ -34,9 +34,7 @@ class ReturnFlowTest extends TestCase
             'reorder_level' => 5,
         ]);
 
-        // Sell 10 units at Rs 1000 with a 10% discount and (test-only) 10%
-        // tax, to a customer, so discount/tax/points ratios are all non-zero
-        // and exercise the proportional refund math below.
+        // Include discount, tax and loyalty points to check the partial refund.
         $this->actingAs($cashier)->post(route('cashier.billing.store'), [
             'customer_id' => $customer->id,
             'items' => [
@@ -82,8 +80,7 @@ class ReturnFlowTest extends TestCase
             'reason' => 'return',
         ]);
 
-        // Exactly half the line by value, so refunds are exactly half of
-        // the original discount/tax/total.
+        // Returning half the sale should refund half the discount, tax and total.
         $this->assertEquals(5000.0, (float) $saleReturn->subtotal_refunded);
         $this->assertEquals(500.0, (float) $saleReturn->discount_refunded);
         $this->assertEquals(450.0, (float) $saleReturn->tax_refunded);
@@ -102,17 +99,7 @@ class ReturnFlowTest extends TestCase
         ]);
     }
 
-    /**
-     * The invoice-lookup JSON is consumed by inline JS in
-     * returns/_content.blade.php that reads these exact keys (sale_id,
-     * date, items.*.sale_item_id, items.*.already_returned,
-     * items.*.max_returnable) to populate hidden inputs later submitted
-     * to returns.store. A prior bug had the controller and the JS drift
-     * out of sync on these names (JS read `id`/`created_at`/`returned_quantity`
-     * while the controller returned `sale_id`/`date`/`already_returned`),
-     * which silently submitted "undefined" as the sale/item IDs. Pin the
-     * exact shape here so that regression can't reappear unnoticed.
-     */
+    // Keep the lookup response keys in sync with the return form's JavaScript.
     public function test_return_lookup_json_matches_the_shape_the_frontend_depends_on(): void
     {
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);

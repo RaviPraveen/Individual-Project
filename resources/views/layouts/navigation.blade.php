@@ -11,8 +11,7 @@
                 <i class="bi bi-list fs-5"></i>
             </button>
         @endif
-        
-        {{-- Live Browser Local Date & Time Widget --}}
+
         <div class="d-none d-md-flex align-items-center gap-2.5">
             <div class="pos-topbar-pill" title="{{ __('Local Date') }}">
                 <i class="bi bi-calendar3 me-2"></i>
@@ -26,7 +25,6 @@
     </div>
 
     <div class="d-flex align-items-center gap-3">
-        {{-- Notifications Bell (admin only) --}}
         @if ($user?->isAdmin())
             @php $unreadNotifications = $unreadNotifications ?? collect(); @endphp
             <div class="dropdown">
@@ -77,7 +75,6 @@
             </div>
         @endif
 
-        {{-- Role-specific Quick Link --}}
         @if ($user?->isAdmin())
             <a href="{{ route('cashier.billing.index') }}" class="btn btn-outline-primary rounded-pill px-3.5 d-none d-sm-inline-flex" style="height:40px; align-items:center;">
                 <i class="bi bi-cart-check me-1.5"></i> {{ __('POS Billing') }}
@@ -87,7 +84,6 @@
             </a>
         @endif
 
-        {{-- Profile Dropdown --}}
         <div class="dropdown">
             <button class="btn d-flex align-items-center gap-2.5 p-1 border-0 rounded-pill pe-3 hover-bg-light" data-bs-toggle="dropdown" style="background: transparent; height: 42px;">
                 <span class="avatar">{{ $initials }}</span>

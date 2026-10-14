@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\LoyaltyPointsEarnedMail;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
@@ -9,6 +10,7 @@ use App\Models\Sale;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class CoreWorkflowTest extends TestCase
@@ -49,7 +51,6 @@ class CoreWorkflowTest extends TestCase
         return $po->fresh('items');
     }
 
-    // Billing: success path
     public function test_billing_completes_a_sale_and_decrements_stock(): void
     {
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
@@ -68,6 +69,29 @@ class CoreWorkflowTest extends TestCase
         $sale = Sale::firstOrFail();
         $this->assertEquals(450.0, (float) $sale->total);
         $this->assertEquals(7, $product->fresh()->stock_qty);
+    }
+
+    public function test_billing_sends_receipt_to_customer_with_email(): void
+    {
+        Mail::fake();
+        $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
+        $customer = $this->actingAs($cashier)->postJson(route('cashier.customers.quick-create'), [
+            'name' => 'Test Customer', 'phone' => '0770000000', 'email' => 'customer@example.com',
+        ])->assertOk()->json();
+        $product = $this->product();
+
+        $this->actingAs($cashier)->post(route('cashier.billing.store'), [
+            'customer_id' => $customer['id'],
+            'items' => [['product_id' => $product->id, 'quantity' => 1]],
+            'discount_percent' => 0,
+            'points_to_redeem' => 0,
+            'payment_method' => 'cash',
+        ])->assertRedirect();
+
+        $sale = Sale::firstOrFail();
+        Mail::assertSent(LoyaltyPointsEarnedMail::class, function ($mail) use ($sale) {
+            return $mail->hasTo('customer@example.com') && $mail->sale->id === $sale->id;
+        });
     }
 
     public function test_billing_records_a_stock_movement_for_each_sale_item(): void
@@ -90,7 +114,6 @@ class CoreWorkflowTest extends TestCase
         ]);
     }
 
-    // Billing: rollback on insufficient stock
     public function test_billing_rolls_back_the_whole_sale_when_stock_is_insufficient(): void
     {
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
@@ -106,7 +129,6 @@ class CoreWorkflowTest extends TestCase
         $response->assertRedirect(route('cashier.billing.index'));
         $response->assertSessionHas('error');
 
-        // Nothing should have been persisted — no sale, no stock change.
         $this->assertDatabaseCount('sales', 0);
         $this->assertDatabaseCount('stock_movements', 0);
         $this->assertEquals(2, $product->fresh()->stock_qty);
@@ -128,14 +150,12 @@ class CoreWorkflowTest extends TestCase
             'payment_method' => 'cash',
         ])->assertSessionHas('error');
 
-        // The in-stock item must NOT have been decremented just because a
-        // later item in the same cart failed — the whole transaction rolls back.
+        // A failed item must roll back the whole sale.
         $this->assertEquals(10, $inStock->fresh()->stock_qty);
         $this->assertEquals(1, $outOfStock->fresh()->stock_qty);
         $this->assertDatabaseCount('sales', 0);
     }
 
-    // Purchase order: receipt restocking and locking
     public function test_marking_a_purchase_order_received_restocks_products(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
@@ -166,9 +186,7 @@ class CoreWorkflowTest extends TestCase
         $this->actingAs($admin)->post(route('admin.purchase-orders.mark-received', $po))->assertRedirect();
         $stockAfterFirstReceive = $product->fresh()->stock_qty;
 
-        // Simulates what the lockForUpdate + inside-transaction status
-        // recheck exists to prevent: a second "mark received" against an
-        // already-received PO must be rejected, not double-restock it.
+        // Receiving the same order twice must not add stock again.
         $response = $this->actingAs($admin)->post(route('admin.purchase-orders.mark-received', $po));
 
         $response->assertRedirect();
@@ -193,7 +211,6 @@ class CoreWorkflowTest extends TestCase
         $this->assertEquals($startingStock, $product->fresh()->stock_qty);
     }
 
-    // Role middleware: 403s for unauthorized roles
     public function test_cashier_is_forbidden_from_admin_only_routes(): void
     {
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
@@ -204,15 +221,12 @@ class CoreWorkflowTest extends TestCase
         $this->actingAs($cashier)->get(route('admin.settings.edit'))->assertForbidden();
     }
 
-    public function test_admin_is_forbidden_from_cashier_only_routes(): void
+    public function test_admin_can_open_display_but_not_cashier_dashboard(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
 
-        // Billing is the one shared POS module admins also use (see
-        // AdminPosAccessTest) — dashboard and the customer-display kiosk
-        // stay cashier-only.
         $this->actingAs($admin)->get(route('cashier.dashboard'))->assertForbidden();
-        $this->actingAs($admin)->get(route('cashier.display.show'))->assertForbidden();
+        $this->actingAs($admin)->get(route('cashier.display.show'))->assertOk();
     }
 
     public function test_deactivated_user_is_forbidden_even_with_the_correct_role(): void
@@ -228,7 +242,6 @@ class CoreWorkflowTest extends TestCase
         $this->get(route('cashier.billing.index'))->assertRedirect(route('login'));
     }
 
-    // Activity log, settings, notifications, near-expiry tests
     public function test_activity_log_records_a_sale_and_is_visible_to_admin(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
@@ -300,8 +313,7 @@ class CoreWorkflowTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
         $this->product(['name' => 'Low Stock Item', 'stock_qty' => 1, 'reorder_level' => 5]);
 
-        // Visiting any admin page runs the notification generator (via the
-        // shared navigation view composer).
+        // Loading admin navigation checks for new alerts.
         $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk();
 
         $this->assertDatabaseHas('notifications', ['type' => 'low_stock', 'is_read' => false]);

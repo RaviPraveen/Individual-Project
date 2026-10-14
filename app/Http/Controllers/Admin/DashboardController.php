@@ -51,7 +51,7 @@ class DashboardController extends Controller
             'stats' => $stats,
             'topCategory' => $topCategory,
             'summary' => $this->businessSummary($request, $stats, $topCategory),
-            'geminiConfigured' => $this->aiService->isConfigured(),
+            'aiConfigured' => $this->aiService->isConfigured(),
             'salesTrend' => $this->salesTrend(),
             'categoryBreakdown' => $this->categoryBreakdown(),
             'promotions' => $promotionAnalytics->dashboardSummary(),
@@ -97,9 +97,7 @@ class DashboardController extends Controller
         ];
     }
 
-    /**
-     * Cache the dashboard business summary narrative for 30 minutes to reduce API usage.
-     */
+    // Cache the summary for 30 minutes to limit API requests.
     private function businessSummary(Request $request, array $stats, $topCategory): ?string
     {
         $cacheKey = 'admin_business_summary_'.now()->format('Y_m_d_H').'_'.intdiv(now()->minute, 30);

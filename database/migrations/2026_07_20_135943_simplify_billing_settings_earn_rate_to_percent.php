@@ -7,17 +7,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('billing_settings', function (Blueprint $table) {
             $table->decimal('points_earn_percent', 8, 3)->default(1)->after('points_earn_count');
         });
 
-        // Preserve whatever effective rate was configured under the old
-        // "spend X, earn Y" fields.
+        // Convert the saved earn rate to a percentage.
         DB::table('billing_settings')->get()->each(function ($row) {
             $percent = $row->points_earn_amount > 0
                 ? ($row->points_earn_count / $row->points_earn_amount) * 100
@@ -31,9 +27,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('billing_settings', function (Blueprint $table) {

@@ -4,15 +4,9 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
 
-/**
- * Resolves the most recent supplier for products based on purchase orders.
- */
+// Find each product's most recent supplier from purchase orders.
 class ProductSupplierResolver
 {
-    /**
-     * @param  array<int>  $productIds
-     * @return array<int, array{id: int, name: string}>
-     */
     public function resolve(array $productIds): array
     {
         if (empty($productIds)) {

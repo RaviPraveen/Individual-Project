@@ -30,12 +30,7 @@ class ReceiptSetting extends Model
         'logo_path',
     ];
 
-    /**
-     * Mirrors the migration's column defaults. Without these, a fresh
-     * firstOrCreate([]) row would apply the DB defaults on save but the
-     * in-memory model returned to the caller would still read those
-     * attributes as null until re-fetched.
-     */
+    // Match the database defaults before a newly created model is reloaded.
     protected $attributes = [
         'shop_name' => 'Welcome Foodcity',
         'thank_you_message' => 'Thank you for shopping with us!',
@@ -50,10 +45,7 @@ class ReceiptSetting extends Model
         'font_weight' => 'normal',
     ];
 
-    /**
-     * There is only ever one row. Get it, creating the default row the
-     * first time anything asks for it.
-     */
+    // Create the settings row on first use.
     public static function current(): self
     {
         return static::query()->firstOrCreate([]);

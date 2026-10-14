@@ -12,12 +12,7 @@ class BillingSetting extends Model
         'bag_fee',
     ];
 
-    /**
-     * Mirrors the migration's column defaults. Without these, a fresh
-     * firstOrCreate([]) row would apply the DB defaults on save but the
-     * in-memory model returned to the caller would still read those
-     * attributes as null until re-fetched.
-     */
+    // Match the database defaults before a newly created model is reloaded.
     protected $attributes = [
         'points_earn_percent' => 1,
         'points_redeem_value' => 1,
@@ -33,10 +28,7 @@ class BillingSetting extends Model
         ];
     }
 
-    /**
-     * There is only ever one row. Get it, creating the default row the
-     * first time anything asks for it.
-     */
+    // Create the settings row on first use.
     public static function current(): self
     {
         return static::query()->firstOrCreate([]);

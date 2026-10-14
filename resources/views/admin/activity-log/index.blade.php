@@ -3,7 +3,6 @@
         <h2 class="h4 mb-0">{{ __('Activity Log') }}</h2>
     </x-slot>
 
-    {{-- Filter bar --}}
     <div class="card mb-3">
         <div class="card-body">
             <form method="GET" action="{{ route('admin.activity-log.index') }}" class="row g-2 align-items-end">

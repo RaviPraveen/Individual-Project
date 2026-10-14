@@ -1,25 +1,9 @@
-{{--
-    Shared receipt markup used by both the on-screen receipt and the PDF
-    export. Deliberately avoids flexbox/grid — dompdf's CSS engine doesn't
-    support them, so this stays table/inline-block based to render
-    identically in a browser and in the generated PDF.
-
-    Expects: $settings (ReceiptSetting) and $data (array):
-    invoice_no, date, cashier_name, customer_name, payment_method,
-    items: [['name','qty','price','total'], ...],
-    subtotal, discount, tax, total, points_earned, points_redeemed, points_balance
---}}
 @php
     $align = fn ($v) => in_array($v, ['left', 'right']) ? $v : 'center';
     $fontWeightMap = ['normal' => 400, 'medium' => 500, 'bold' => 700];
     $widthPx = $settings->paper_size === 'a4' ? 420 : ($settings->receipt_width === '58mm' ? 219 : 302);
 
-    // This partial renders both the on-screen HTML receipt and the PDF
-    // export. dompdf has `enable_remote` off (the default — fetching
-    // remote URLs at PDF-render time is a security/reliability risk), so
-    // it can only embed the logo from a local filesystem path; a browser
-    // can only load it from an actual URL. Using the filesystem path
-    // unconditionally left the on-screen receipt's logo broken.
+    // DomPDF needs a local logo path; the browser needs a public URL.
     $forPdf = $forPdf ?? false;
     $logoUrl = $settings->logo_path
         ? ($forPdf ? \Illuminate\Support\Facades\Storage::disk('public')->path($settings->logo_path) : \Illuminate\Support\Facades\Storage::disk('public')->url($settings->logo_path))

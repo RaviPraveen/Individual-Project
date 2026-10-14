@@ -7,14 +7,11 @@ use App\Models\Product;
 use App\Models\PurchaseOrder;
 use Illuminate\Support\Facades\Cache;
 
-/**
- * Checks system conditions and generates notifications for low stock, pending POs, and expiry dates.
- */
 class NotificationGenerator
 {
     public function generate(): void
     {
-        // Cache check to avoid running queries on every request
+        // Check alerts at most once every 10 minutes.
         Cache::remember('notification_generator_last_run', now()->addMinutes(10), function () {
             $this->generateLowStock();
             $this->generatePendingPurchaseOrders();

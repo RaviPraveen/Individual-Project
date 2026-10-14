@@ -78,12 +78,6 @@
         </div>
 
         @if (! $promotion)
-            {{-- Create-only: the Edit page's AI Poster Generator (edit.blade.php)
-                 works against an already-saved Promotion; here nothing is
-                 saved yet, so generation stashes the result in the session
-                 (see PromotionPosterController::generateDraft()) and
-                 "Use This Poster" just flags a hidden field — the actual
-                 file only gets attached to a real promotion on submit. --}}
             <div class="card border-0 shadow-sm mb-3" id="ai-poster-generator" style="border: 1px solid #DBEAFE !important;">
                 <div class="card-header bg-white fw-bold text-dark border-bottom py-3">
                     <i class="bi bi-stars text-warning me-1.5"></i> {{ __('AI Promotion Poster Generator') }}
@@ -209,9 +203,7 @@
         recalc();
     })();
 
-    // Create-only AI Poster Generator — a no-op on the Edit page, where
-    // #ai-poster-generator doesn't exist (it has its own separate,
-    // already-saved-promotion-backed generator in edit.blade.php).
+    // The edit page has a separate generator for saved promotions.
     if (document.getElementById('ai-poster-generator')) {
         (function () {
             const generateDraftUrl = '{{ route('admin.promotions.poster.generate-draft') }}';
@@ -254,6 +246,13 @@
                 useGeneratedField.value = '0';
                 selectedNote.classList.add('d-none');
             }
+
+            [titleInput, productSelectEl, offerPriceInputEl, descriptionInput].forEach(input => {
+                input.addEventListener('input', () => {
+                    markUnselected();
+                    btnUse.classList.add('d-none');
+                });
+            });
 
             btnGenerate.addEventListener('click', function () {
                 if (!productSelectEl.value || !titleInput.value.trim() || !offerPriceInputEl.value) {

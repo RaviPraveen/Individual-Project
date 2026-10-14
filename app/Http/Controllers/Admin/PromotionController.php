@@ -9,6 +9,7 @@ use App\Services\PromotionRecommendationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PromotionController extends Controller
@@ -68,10 +69,7 @@ class PromotionController extends Controller
     {
         return view('admin.promotions.create', [
             'products' => Product::where('is_active', true)->orderBy('name')->get(['id', 'name', 'selling_price', 'category_id']),
-            // Restores the generated-poster preview if the admin generated
-            // one, then got redirected back here by a validation failure on
-            // some other field — otherwise they'd lose the AI poster just
-            // because e.g. the end date was blank.
+            // Keep the poster preview after a validation error.
             'draftPoster' => session(PromotionPosterController::DRAFT_SESSION_KEY),
         ]);
     }
@@ -90,13 +88,20 @@ class PromotionController extends Controller
 
         $draft = session(PromotionPosterController::DRAFT_SESSION_KEY);
 
+        if (! $request->hasFile('poster_image') && $request->boolean('use_generated_poster')) {
+            if (! $draft || ! Storage::disk('public')->exists($draft['path'])
+                || ($draft['details'] ?? null) !== $promotion->posterDetails()) {
+                throw ValidationException::withMessages([
+                    'poster_image' => 'The poster does not match these details. Generate it again before saving.',
+                ]);
+            }
+        }
+
         if ($request->hasFile('poster_image')) {
             $promotion->poster_path = $request->file('poster_image')->store('promotions', 'public');
             $promotion->poster_source = 'custom';
         } elseif ($request->boolean('use_generated_poster') && $draft && Storage::disk('public')->exists($draft['path'])) {
-            // Move out of the pending/ scratch directory so the file lives
-            // wherever any other approved poster does once it's actually
-            // linked to a real promotion.
+            // Move the selected draft into the saved posters folder.
             $finalPath = 'promotions/'.basename($draft['path']);
             Storage::disk('public')->move($draft['path'], $finalPath);
             $promotion->poster_path = $finalPath;
@@ -109,9 +114,7 @@ class PromotionController extends Controller
             ]];
         }
 
-        // Either way this create attempt is resolving the draft's lifecycle:
-        // used (moved above) or abandoned (delete the scratch file so it
-        // doesn't linger forever).
+        // Remove the draft file if it was not selected.
         if ($draft && $promotion->poster_source !== 'ai') {
             Storage::disk('public')->delete($draft['path']);
         }
@@ -135,10 +138,22 @@ class PromotionController extends Controller
         $validated = $this->validatePromotion($request, $promotion);
 
         $product = Product::findOrFail($validated['product_id']);
+        $oldPosterDetails = $promotion->posterDetails();
 
         $promotion->fill($validated);
         $promotion->current_price = $product->selling_price;
         $promotion->refreshDiscountPercentage();
+        $promotion->status = $promotion->effectiveStatus();
+
+        $posterChanged = $oldPosterDetails !== $promotion->posterDetails();
+        $needsPoster = $posterChanged && ($promotion->poster_path || $promotion->pending_poster_path);
+        if ($posterChanged) {
+            Storage::disk('public')->delete(array_filter([$promotion->poster_path, $promotion->pending_poster_path]));
+            $promotion->poster_path = null;
+            $promotion->poster_source = null;
+            $promotion->pending_poster_path = null;
+            $promotion->pending_poster_used_ai = false;
+        }
 
         if ($request->hasFile('poster_image')) {
             if ($promotion->poster_path) {
@@ -149,6 +164,11 @@ class PromotionController extends Controller
         }
 
         $promotion->save();
+
+        if ($needsPoster && ! $request->hasFile('poster_image')) {
+            return redirect()->route('admin.promotions.edit', $promotion)
+                ->with('success', 'Promotion updated. Generate or upload a new poster for the changed details.');
+        }
 
         return redirect()->route('admin.promotions.index')->with('success', __('Promotion ":title" updated.', ['title' => $promotion->title]));
     }
@@ -168,12 +188,7 @@ class PromotionController extends Controller
         return redirect()->route('admin.promotions.index')->with('success', __('Promotion ":title" deleted.', ['title' => $title]));
     }
 
-    /**
-     * Manual ON/OFF toggle from the list page. OFF always pauses; ON resumes
-     * respecting the schedule (scheduled/active) unless the window has
-     * already closed, in which case it's rejected with the message the spec
-     * calls for instead of silently reactivating an expired promotion.
-     */
+    // Pause or resume a promotion within its scheduled dates.
     public function toggleStatus(Promotion $promotion): RedirectResponse
     {
         if ($promotion->status === Promotion::STATUS_PAUSED) {
