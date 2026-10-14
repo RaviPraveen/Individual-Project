@@ -87,21 +87,36 @@ class PromotionController extends Controller
         $promotion->created_by = $request->user()->id;
 
         $draft = session(PromotionPosterController::DRAFT_SESSION_KEY);
+        $removePhoto = $request->boolean('remove_photo') && ! $request->hasFile('product_photo');
+        $photoMatches = true;
+        if ($request->hasFile('product_photo')) {
+            $photoMatches = ($draft['photo_hash'] ?? null) === hash_file('sha256', $request->file('product_photo')->getRealPath());
+        } elseif ($removePhoto) {
+            $photoMatches = empty($draft['photo_path']);
+        }
+        if ($photoMatches && ! $removePhoto && ! empty($draft['photo_path'])
+            && ($draft['details']['product_id'] ?? null) === $product->id
+            && Storage::disk('public')->exists($draft['photo_path'])) {
+            $promotion->product_photo_path = $draft['photo_path'];
+        }
 
         if (! $request->hasFile('poster_image') && $request->boolean('use_generated_poster')) {
             if (! $draft || ! Storage::disk('public')->exists($draft['path'])
-                || ($draft['details'] ?? null) !== $promotion->posterDetails()) {
+                || ! $photoMatches || ($draft['details'] ?? null) !== $promotion->posterDetails()) {
                 throw ValidationException::withMessages([
                     'poster_image' => 'The poster does not match these details. Generate it again before saving.',
                 ]);
             }
         }
 
+        if ($request->hasFile('product_photo') && ! $promotion->product_photo_path) {
+            $promotion->product_photo_path = $request->file('product_photo')->store('promotions/photos', 'public');
+        }
+
         if ($request->hasFile('poster_image')) {
             $promotion->poster_path = $request->file('poster_image')->store('promotions', 'public');
             $promotion->poster_source = 'custom';
         } elseif ($request->boolean('use_generated_poster') && $draft && Storage::disk('public')->exists($draft['path'])) {
-            // Move the selected draft into the saved posters folder.
             $finalPath = 'promotions/'.basename($draft['path']);
             Storage::disk('public')->move($draft['path'], $finalPath);
             $promotion->poster_path = $finalPath;
@@ -114,9 +129,11 @@ class PromotionController extends Controller
             ]];
         }
 
-        // Remove the draft file if it was not selected.
         if ($draft && $promotion->poster_source !== 'ai') {
             Storage::disk('public')->delete($draft['path']);
+        }
+        if (! empty($draft['photo_path']) && $draft['photo_path'] !== $promotion->product_photo_path) {
+            Storage::disk('public')->delete($draft['photo_path']);
         }
         session()->forget(PromotionPosterController::DRAFT_SESSION_KEY);
 
@@ -139,8 +156,15 @@ class PromotionController extends Controller
 
         $product = Product::findOrFail($validated['product_id']);
         $oldPosterDetails = $promotion->posterDetails();
+        $oldPhoto = $promotion->product_photo_path;
+        $productChanged = (int) $promotion->product_id !== $product->id;
 
         $promotion->fill($validated);
+        if ($request->hasFile('product_photo')) {
+            $promotion->product_photo_path = $request->file('product_photo')->store('promotions/photos', 'public');
+        } elseif ($request->boolean('remove_photo') || $productChanged) {
+            $promotion->product_photo_path = null;
+        }
         $promotion->current_price = $product->selling_price;
         $promotion->refreshDiscountPercentage();
         $promotion->status = $promotion->effectiveStatus();
@@ -165,6 +189,10 @@ class PromotionController extends Controller
 
         $promotion->save();
 
+        if ($oldPhoto && $oldPhoto !== $promotion->product_photo_path) {
+            Storage::disk('public')->delete($oldPhoto);
+        }
+
         if ($needsPoster && ! $request->hasFile('poster_image')) {
             return redirect()->route('admin.promotions.edit', $promotion)
                 ->with('success', 'Promotion updated. Generate or upload a new poster for the changed details.');
@@ -180,6 +208,9 @@ class PromotionController extends Controller
         }
         if ($promotion->pending_poster_path && $promotion->pending_poster_path !== $promotion->poster_path) {
             Storage::disk('public')->delete($promotion->pending_poster_path);
+        }
+        if ($promotion->product_photo_path) {
+            Storage::disk('public')->delete($promotion->product_photo_path);
         }
 
         $title = $promotion->title;
@@ -227,6 +258,9 @@ class PromotionController extends Controller
                     if ($p->pending_poster_path && $p->pending_poster_path !== $p->poster_path) {
                         Storage::disk('public')->delete($p->pending_poster_path);
                     }
+                    if ($p->product_photo_path) {
+                        Storage::disk('public')->delete($p->product_photo_path);
+                    }
                 })->delete(),
             };
         }
@@ -249,6 +283,8 @@ class PromotionController extends Controller
             'description' => ['nullable', 'string', 'max:2000'],
             'offer_price' => $offerPriceRules,
             'poster_image' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:10240'],
+            'product_photo' => PromotionPosterController::PHOTO_RULES,
+            'remove_photo' => ['nullable', 'boolean'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after:start_date'],
             'display_duration' => ['required', 'integer', 'min:5', 'max:300'],

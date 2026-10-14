@@ -35,18 +35,16 @@
                     </span>
                 </div>
             </div>
-            @if ($supplierReturn->credit_note_value > 0 || $supplierReturn->resolution !== 'none')
-                <div class="row mt-3">
-                    <div class="col-md-3">
-                        <div class="text-muted small">{{ __('Resolution') }}</div>
-                        <div>{{ ucfirst($supplierReturn->resolution) }}</div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="text-muted small">{{ __('Credit Note Value') }}</div>
-                        <div>{{ number_format($supplierReturn->credit_note_value, 2) }}</div>
-                    </div>
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <div class="text-muted small">{{ __('Resolution') }}</div>
+                    <div>{{ $supplierReturn->resolution === 'none' ? __('Not settled') : __(ucfirst($supplierReturn->resolution)) }}</div>
                 </div>
-            @endif
+                <div class="col-md-3">
+                    <div class="text-muted small">{{ __('Credit / Refund Amount (Rs.)') }}</div>
+                    <div>{{ number_format($supplierReturn->credit_note_value, 2) }}</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -72,6 +70,36 @@
             </table>
         </div>
     </div>
+
+    @if ($supplierReturn->status !== 'cancelled')
+        <div class="card mt-3">
+            <div class="card-body">
+                <h3 class="h6">{{ __('Supplier Settlement') }}</h3>
+                <form method="POST" action="{{ route('admin.supplier-returns.settlement', $supplierReturn) }}" class="row g-3 align-items-end">
+                    @csrf
+                    @method('PATCH')
+                    <div class="col-md-4">
+                        <x-input-label for="resolution" :value="__('Resolution')" />
+                        <select id="resolution" name="resolution" class="form-select" required>
+                            @foreach (['none' => 'Not settled', 'credit' => 'Credit note', 'replacement' => 'Replacement goods', 'refund' => 'Refund'] as $value => $label)
+                                <option value="{{ $value }}" @selected(old('resolution', $supplierReturn->resolution) === $value)>{{ __($label) }}</option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('resolution')" />
+                    </div>
+                    <div class="col-md-4">
+                        <x-input-label for="credit_note_value" :value="__('Credit / Refund Amount (Rs.)')" />
+                        <x-text-input id="credit_note_value" name="credit_note_value" type="number" min="0" max="9999999999.99" step="0.01" :value="old('credit_note_value', $supplierReturn->credit_note_value)" />
+                        <x-input-error :messages="$errors->get('credit_note_value')" />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary">{{ __('Save Settlement') }}</button>
+                    </div>
+                    <div class="col-12 text-muted small">{{ __('Enter the amount for credit or refund. No amount is recorded for replacement goods or an unsettled return.') }}</div>
+                </form>
+            </div>
+        </div>
+    @endif
 
     @if ($supplierReturn->status === 'pending')
         <div class="mt-3 d-flex gap-2">

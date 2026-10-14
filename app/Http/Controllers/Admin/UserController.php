@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -13,6 +14,8 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
+    public function __construct(private ActivityLogger $activityLogger) {}
+
     public function index(Request $request): View
     {
         $users = User::query()
@@ -43,13 +46,15 @@ class UserController extends Controller
             'password'              => ['required', 'confirmed', Password::min(8)],
         ]);
 
-        User::create([
+        $user = User::create([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'role'     => $validated['role'],
             'password' => Hash::make($validated['password']),
             'is_active' => true,
         ]);
+
+        $this->activityLogger->log('user.created', "Created staff account {$user->name} (#{$user->id})", $user);
 
         return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
     }
@@ -106,6 +111,18 @@ class UserController extends Controller
 
         $user->update($data);
 
+        $changes = array_intersect(array_keys($user->getChanges()), ['name', 'email', 'role']);
+        if ($changes) {
+            $this->activityLogger->log('user.updated', 'Updated '.implode(', ', $changes)." for {$user->name} (#{$user->id})", $user);
+        }
+        if ($user->wasChanged('is_active')) {
+            $action = $user->is_active ? 'activated' : 'deactivated';
+            $this->activityLogger->log('user.'.$action, ucfirst($action)." staff account {$user->name} (#{$user->id})", $user);
+        }
+        if ($user->wasChanged('password')) {
+            $this->activityLogger->log('user.password_reset', "Changed password for {$user->name} (#{$user->id})", $user);
+        }
+
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
@@ -116,7 +133,6 @@ class UserController extends Controller
             return back()->with('error', 'You cannot delete your own account.');
         }
 
-        // Keep at least one active admin.
         if ($user->role === 'admin' && $user->is_active) {
             $otherActiveAdmins = User::where('role', 'admin')
                 ->where('is_active', true)
@@ -131,12 +147,16 @@ class UserController extends Controller
         // Deactivate users with transaction history.
         if ($user->hasRelatedRecords()) {
             $user->update(['is_active' => false]);
+            if ($user->wasChanged('is_active')) {
+                $this->activityLogger->log('user.deactivated', "Deactivated staff account {$user->name} (#{$user->id}); related records kept", $user);
+            }
 
             return redirect()->route('admin.users.index')
                 ->with('success', 'User has related records and was deactivated instead of deleted.');
         }
 
         $user->delete();
+        $this->activityLogger->log('user.deleted', "Deleted staff account {$user->name} (#{$user->id})", $user);
 
         return redirect()->route('admin.users.index')->with('success', 'User deleted.');
     }
@@ -151,6 +171,7 @@ class UserController extends Controller
             'password'            => Hash::make($request->input('temp_password')),
             'force_password_reset' => true,
         ]);
+        $this->activityLogger->log('user.password_reset', "Reset password for {$user->name} (#{$user->id})", $user);
 
         return redirect()->route('admin.users.index')
             ->with('success', "Password for {$user->name} has been reset. They will be prompted to change it on next login.");

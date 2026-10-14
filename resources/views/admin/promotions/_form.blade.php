@@ -1,6 +1,7 @@
 @php
     $promotion = $promotion ?? null;
     $productPrices = $products->pluck('selling_price', 'id');
+    $photoPath = $promotion?->product_photo_path ?? ($draftPoster['photo_path'] ?? null);
 @endphp
 
 <div class="row g-4">
@@ -62,6 +63,18 @@
                     <x-input-error :messages="$errors->get('description')" />
                 </div>
 
+                <div class="mb-3">
+                    <x-input-label for="product_photo" :value="__('Product Photo (Optional)')" />
+                    <img id="product-photo-preview" src="{{ $photoPath ? \Illuminate\Support\Facades\Storage::disk('public')->url($photoPath) : '' }}" alt="{{ __('Selected product photo') }}" class="rounded-3 border mb-2 {{ $photoPath ? '' : 'd-none' }}" style="max-width:180px;max-height:150px;object-fit:contain;">
+                    <input type="file" id="product_photo" name="product_photo" class="form-control" accept="image/png,image/jpeg,image/webp">
+                    <div class="form-text">{{ __('Use your exact product or rice brand. AI creates the background and keeps this photo. JPG, PNG or WebP, max 5MB and 4096 pixels per side.') }}</div>
+                    <div class="form-check mt-2">
+                        <input type="checkbox" class="form-check-input" id="remove_photo" name="remove_photo" value="1" @checked(old('remove_photo'))>
+                        <label class="form-check-label small" for="remove_photo">{{ __('Remove product photo') }}</label>
+                    </div>
+                    <x-input-error :messages="$errors->get('product_photo')" />
+                </div>
+
                 <div class="mb-1">
                     <x-input-label for="poster_image" :value="__('Promotion Poster')" />
                     @if ($promotion?->poster_path)
@@ -85,7 +98,7 @@
                 <div class="card-body">
                     <input type="hidden" name="use_generated_poster" id="use_generated_poster" value="{{ old('use_generated_poster') ? '1' : '0' }}">
 
-                    <div id="ai-poster-preview-wrap" class="rounded-3 border border-2 border-primary-subtle bg-light d-flex align-items-center justify-content-center overflow-hidden position-relative mb-3" style="aspect-ratio:16/9; max-width:520px;">
+                    <div id="ai-poster-preview-wrap" class="rounded-3 border border-2 border-primary-subtle bg-light d-flex align-items-center justify-content-center overflow-hidden position-relative mb-3" style="aspect-ratio:4/3; max-width:520px;">
                         <div id="ai-poster-skeleton" class="w-100 h-100 d-none" style="background: linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%); background-size: 200% 100%; animation: pos-skeleton 1.2s ease-in-out infinite;"></div>
                         @if ($draftPoster ?? null)
                             <img id="ai-poster-preview-img" src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($draftPoster['path']) }}" class="w-100 h-100" style="object-fit:cover;" alt="{{ __('Generated poster preview') }}">
@@ -178,6 +191,33 @@
 
 <script>
     (function () {
+        const photo = document.getElementById('product_photo');
+        const preview = document.getElementById('product-photo-preview');
+        const remove = document.getElementById('remove_photo');
+        preview.dataset.savedPhoto = preview.getAttribute('src') || '';
+        let photoUrl = null;
+
+        photo.addEventListener('change', () => {
+            if (photoUrl) URL.revokeObjectURL(photoUrl);
+            remove.checked = false;
+            photoUrl = photo.files[0] ? URL.createObjectURL(photo.files[0]) : null;
+            const savedPhoto = preview.dataset.savedPhoto;
+            preview.src = photoUrl || savedPhoto;
+            preview.classList.toggle('d-none', !photoUrl && !savedPhoto);
+        });
+        remove.addEventListener('change', () => {
+            if (remove.checked) {
+                photo.value = '';
+                if (photoUrl) URL.revokeObjectURL(photoUrl);
+                photoUrl = null;
+                preview.src = preview.dataset.savedPhoto;
+            }
+            preview.classList.toggle('d-none', remove.checked || !preview.getAttribute('src'));
+        });
+        preview.classList.toggle('d-none', remove.checked || !preview.dataset.savedPhoto);
+    })();
+
+    (function () {
         const productSelect = document.getElementById('product_id');
         const currentPriceDisplay = document.getElementById('current_price_display');
         const offerPriceInput = document.getElementById('offer_price');
@@ -214,6 +254,8 @@
             const productSelectEl = document.getElementById('product_id');
             const offerPriceInputEl = document.getElementById('offer_price');
             const descriptionInput = document.getElementById('description');
+            const photo = document.getElementById('product_photo');
+            const removePhoto = document.getElementById('remove_photo');
             const useGeneratedField = document.getElementById('use_generated_poster');
 
             const btnGenerate = document.getElementById('ai-btn-generate');
@@ -247,7 +289,14 @@
                 selectedNote.classList.add('d-none');
             }
 
-            [titleInput, productSelectEl, offerPriceInputEl, descriptionInput].forEach(input => {
+            let lockedFields = [];
+            function setBusy(busy) {
+                if (busy) lockedFields = [...titleInput.form.elements].filter(field => !field.disabled);
+                lockedFields.forEach(field => field.disabled = busy);
+                if (!busy) lockedFields = [];
+            }
+
+            [titleInput, productSelectEl, offerPriceInputEl, descriptionInput, photo, removePhoto].forEach(input => {
                 input.addEventListener('input', () => {
                     markUnselected();
                     btnUse.classList.add('d-none');
@@ -260,20 +309,23 @@
                     return;
                 }
 
-                btnGenerate.disabled = true;
+                setBusy(true);
                 skeleton.classList.remove('d-none');
                 document.getElementById('ai-poster-preview-img')?.classList.add('d-none');
                 markUnselected();
 
+                const form = new FormData();
+                form.append('product_id', productSelectEl.value);
+                form.append('title', titleInput.value.trim());
+                form.append('offer_price', offerPriceInputEl.value);
+                form.append('description', descriptionInput.value.trim());
+                form.append('remove_photo', removePhoto.checked ? '1' : '0');
+                if (photo.files[0]) form.append('product_photo', photo.files[0]);
+
                 fetch(generateDraftUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                    body: JSON.stringify({
-                        product_id: productSelectEl.value,
-                        title: titleInput.value.trim(),
-                        offer_price: offerPriceInputEl.value,
-                        description: descriptionInput.value.trim(),
-                    }),
+                    headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                    body: form,
                 }).then(r => r.json().then(data => ({ ok: r.ok, data }))).then(({ ok, data }) => {
                     skeleton.classList.add('d-none');
                     document.getElementById('ai-poster-preview-img')?.classList.remove('d-none');
@@ -286,6 +338,7 @@
                     }
 
                     setPreviewImage(data.poster_url);
+                    document.getElementById('product-photo-preview').dataset.savedPhoto = data.photo_url || '';
                     btnGenerateLabel.textContent = '{{ __('Generate Again') }}';
                     btnUse.classList.remove('d-none');
                     btnRemove.classList.remove('d-none');
@@ -295,7 +348,7 @@
                     skeleton.classList.add('d-none');
                     btnGenerate.disabled = false;
                     window.posToast ? window.posToast('{{ __('Unable to generate poster. Please try again.') }}', 'danger') : null;
-                });
+                }).finally(() => setBusy(false));
             });
 
             btnUse.addEventListener('click', function () {
@@ -309,6 +362,11 @@
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
                 }).then(() => {
+                    document.getElementById('product-photo-preview').dataset.savedPhoto = '';
+                    if (!photo.files[0]) {
+                        document.getElementById('product-photo-preview').src = '';
+                        document.getElementById('product-photo-preview').classList.add('d-none');
+                    }
                     document.getElementById('ai-poster-preview-img')?.remove();
                     previewWrap.insertAdjacentHTML('beforeend', '<div class="text-muted text-center p-4" id="ai-poster-preview-empty"><i class="bi bi-magic fs-1 d-block mb-2"></i>{{ __('Fill in Product, Offer Price, and Title above, then generate a poster') }}</div>');
                     btnUse.classList.add('d-none');

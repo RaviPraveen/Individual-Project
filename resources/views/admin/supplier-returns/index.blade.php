@@ -14,7 +14,7 @@
                         <th>{{ __('Return Date') }}</th>
                         <th>{{ __('Supplier') }}</th>
                         <th>{{ __('Items') }}</th>
-                        <th>{{ __('Credit Note Value') }}</th>
+                        <th>{{ __('Credit / Refund Amount (Rs.)') }}</th>
                         <th>{{ __('Status') }}</th>
                         <th class="text-end">{{ __('Actions') }}</th>
                     </tr>

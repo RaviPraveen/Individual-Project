@@ -12,6 +12,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
@@ -168,6 +169,45 @@ class SupplierReturnController extends Controller
         );
 
         return redirect()->route('admin.supplier-returns.show', $supplierReturn)->with('success', 'Supplier return cancelled.');
+    }
+
+    public function settlement(Request $request, SupplierReturn $supplierReturn): RedirectResponse
+    {
+        $hasAmount = in_array($request->input('resolution'), ['credit', 'refund'], true);
+        $data = $request->validate([
+            'resolution' => ['required', Rule::in(['credit', 'replacement', 'refund', 'none'])],
+            'credit_note_value' => [
+                Rule::requiredIf($hasAmount), 'nullable', 'numeric', 'decimal:0,2',
+                'min:'.($hasAmount ? '0.01' : '0'), 'max:9999999999.99',
+            ],
+        ]);
+
+        try {
+            DB::transaction(function () use ($supplierReturn, $data, $hasAmount) {
+                $return = SupplierReturn::whereKey($supplierReturn->id)->lockForUpdate()->firstOrFail();
+
+                if ($return->status === 'cancelled') {
+                    throw new RuntimeException('Cannot update settlement for a cancelled return.');
+                }
+
+                $return->update([
+                    'resolution' => $data['resolution'],
+                    'credit_note_value' => $hasAmount ? $data['credit_note_value'] : 0,
+                ]);
+
+                if ($return->wasChanged(['resolution', 'credit_note_value'])) {
+                    $this->activityLogger->log(
+                        'supplier_return.settlement_updated',
+                        "Updated settlement for supplier return #{$return->id}",
+                        $return
+                    );
+                }
+            });
+        } catch (RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('admin.supplier-returns.show', $supplierReturn)->with('success', 'Supplier settlement saved.');
     }
 
     public function pdf(SupplierReturn $supplierReturn): Response

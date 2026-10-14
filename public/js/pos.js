@@ -3,7 +3,7 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     // Update the displayed date and time.
-    function updateLiveDateTime() {
+    function updateClock() {
       var dateEl = document.getElementById('pos-live-date');
       var clockEl = document.getElementById('pos-live-clock');
       if (!dateEl && !clockEl) return;
@@ -21,8 +21,8 @@
       }
     }
 
-    updateLiveDateTime();
-    setInterval(updateLiveDateTime, 1000);
+    updateClock();
+    setInterval(updateClock, 1000);
 
     // Show session messages as toasts.
     var flashEl = document.getElementById('pos-flash-data');

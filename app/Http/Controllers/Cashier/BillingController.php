@@ -297,7 +297,7 @@ class BillingController extends Controller
         ]);
 
         if (! $aiService->isConfigured()) {
-            return response()->json(['configured' => false, 'items' => []]);
+            return response()->json(['configured' => false, 'items' => [], 'unmatched' => []]);
         }
 
         $products = Product::where('is_active', true)->get(['id', 'name', 'sku', 'selling_price', 'stock_qty']);
@@ -305,9 +305,11 @@ class BillingController extends Controller
 
         $prompt = 'You are an order-parsing assistant for a supermarket POS. Given the CUSTOMER ORDER TEXT below '.
             'and the EXACT product catalog (with numeric IDs), identify which catalog products and quantities were '.
-            'requested. Respond with ONLY a JSON array, no other text, no markdown formatting, in this exact shape: '.
-            '[{"product_id": <int>, "quantity": <int>}]. Only use product_id values that appear in the catalog '.
-            "below — never invent one. If a mentioned item has no confident match in the catalog, omit it entirely. ".
+            'requested. Respond with ONLY a JSON object, no other text, no markdown formatting, in this exact shape: '.
+            '{"items":[{"product_id": <int>, "quantity": <int>}],"unmatched":["requested item text"]}. '.
+            'Only use product_id values that appear in the catalog below — never invent one. '.
+            'Put items without a confident catalog match in unmatched, keeping their requested name, quantity and unit. '.
+            'Do not omit requested items. Use an empty array when either list has no items. '.
             "If no quantity is stated for an item, use 1.\n\n".
             "CATALOG:\n{$catalog}\n\n".
             "ORDER TEXT: \"{$validated['text']}\"";
@@ -321,19 +323,28 @@ class BillingController extends Controller
         ]);
 
         if ($aiResponse === null) {
-            return response()->json(['configured' => true, 'error' => 'The AI assistant is currently unavailable.', 'items' => []]);
+            return response()->json(['configured' => true, 'error' => 'The AI assistant is currently unavailable.', 'items' => [], 'unmatched' => []]);
         }
 
-        $parsedItems = $this->extractJsonArray($aiResponse);
+        $order = $this->extractOrder($aiResponse);
 
-        if ($parsedItems === null) {
-            return response()->json(['configured' => true, 'error' => "Couldn't understand that order — try rephrasing or add items manually.", 'items' => []]);
+        if ($order === null) {
+            return response()->json(['configured' => true, 'error' => "Couldn't understand that order — try rephrasing or add items manually.", 'items' => [], 'unmatched' => []]);
         }
 
         $productsById = $products->keyBy('id');
 
-        $items = collect($parsedItems)
-            ->filter(fn ($row) => is_array($row) && isset($row['product_id']) && $productsById->has((int) $row['product_id']))
+        $items = collect($order['items'])
+            ->filter(function ($row) use ($productsById) {
+                if (! is_array($row) || is_bool($row['product_id'] ?? null) || is_bool($row['quantity'] ?? null)) {
+                    return false;
+                }
+
+                $id = filter_var($row['product_id'] ?? null, FILTER_VALIDATE_INT);
+                $qty = filter_var($row['quantity'] ?? 1, FILTER_VALIDATE_INT);
+
+                return $id !== false && $qty !== false && $qty > 0 && $productsById->has($id);
+            })
             ->map(function ($row) use ($productsById) {
                 $product = $productsById->get((int) $row['product_id']);
                 $quantity = max(1, (int) ($row['quantity'] ?? 1));
@@ -350,15 +361,34 @@ class BillingController extends Controller
             ->filter(fn ($item) => $item['quantity'] > 0)
             ->values();
 
-        return response()->json(['configured' => true, 'items' => $items]);
+        $unmatched = collect($order['unmatched'])
+            ->filter(fn ($item) => is_string($item))
+            ->map(fn ($item) => trim($item))
+            ->filter(fn ($item) => $item !== '' && mb_strlen($item) <= 500)
+            ->unique()
+            ->values();
+
+        return response()->json(['configured' => true, 'items' => $items, 'unmatched' => $unmatched]);
     }
 
-    private function extractJsonArray(string $aiResponse): ?array
+    private function extractOrder(string $aiResponse): ?array
     {
         $cleaned = trim(preg_replace('/^```(?:json)?\s*|\s*```$/i', '', trim($aiResponse)));
-        $decoded = json_decode($cleaned, true);
+        $decoded = json_decode($cleaned);
 
-        return is_array($decoded) ? $decoded : null;
+        if (is_array($decoded)) {
+            $decoded = (object) ['items' => $decoded, 'unmatched' => []];
+        }
+
+        if (! is_object($decoded) || ! isset($decoded->items, $decoded->unmatched)
+            || ! is_array($decoded->items) || ! is_array($decoded->unmatched)) {
+            return null;
+        }
+
+        return [
+            'items' => array_map(fn ($row) => is_object($row) ? (array) $row : $row, $decoded->items),
+            'unmatched' => $decoded->unmatched,
+        ];
     }
 
     public function receipt(Sale $sale): View

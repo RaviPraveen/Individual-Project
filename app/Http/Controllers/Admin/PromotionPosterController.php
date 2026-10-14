@@ -17,6 +17,8 @@ class PromotionPosterController extends Controller
     // Keep one unsaved poster per admin session; do not accept a file path from the client.
     public const DRAFT_SESSION_KEY = 'promotion_draft_poster';
 
+    public const PHOTO_RULES = ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:5120', 'dimensions:max_width=4096,max_height=4096'];
+
     public function __construct(
         private AiService $aiService,
         private PosterComposer $composer,
@@ -26,13 +28,19 @@ class PromotionPosterController extends Controller
     public function generate(Promotion $promotion): JsonResponse
     {
         $promotion->loadMissing('product.category');
+        $details = $promotion->posterDetails();
 
-        $prompt = $this->buildPrompt($promotion->product);
+        $photo = $promotion->product_photo_path && Storage::disk('public')->exists($promotion->product_photo_path)
+            ? Storage::disk('public')->get($promotion->product_photo_path) : null;
+        $prompt = $this->buildPrompt($promotion->product, $photo !== null);
         $backgroundBytes = $this->aiService->generateImage($prompt);
         $usedAi = $backgroundBytes !== null;
 
-        // Use a gradient background if Hugging Face cannot generate an image.
-        $posterBytes = $this->composer->compose($backgroundBytes ?? '', $promotion);
+        $posterBytes = $this->composer->compose($backgroundBytes ?? '', $promotion, $photo);
+
+        if ($promotion->refresh()->posterDetails() !== $details) {
+            return response()->json(['message' => __('The promotion changed while generating. Generate a new poster.')], 422);
+        }
 
         if ($promotion->pending_poster_path) {
             Storage::disk('public')->delete($promotion->pending_poster_path);
@@ -60,7 +68,8 @@ class PromotionPosterController extends Controller
             'used_ai' => $usedAi,
             'message' => $usedAi
                 ? __('Poster generated.')
-                : __('AI image service is unavailable right now — generated a placeholder poster instead. You can still approve it or try again shortly.'),
+                : ($photo ? __('The AI background is unavailable. Your product photo was kept on a plain background.')
+                    : __('AI image service is unavailable right now — generated a placeholder poster instead. You can still approve it or try again shortly.')),
         ]);
     }
 
@@ -94,7 +103,6 @@ class PromotionPosterController extends Controller
         return response()->json(['message' => __('Generated poster discarded.')]);
     }
 
-    // Remove the published poster; discard() removes only the pending preview.
     public function destroyLive(Promotion $promotion): JsonResponse
     {
         if ($promotion->poster_path) {
@@ -113,6 +121,8 @@ class PromotionPosterController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'offer_price' => ['required', 'numeric', 'min:0'],
             'description' => ['nullable', 'string', 'max:2000'],
+            'product_photo' => self::PHOTO_RULES,
+            'remove_photo' => ['nullable', 'boolean'],
         ]);
 
         $product = Product::with('category')->findOrFail($validated['product_id']);
@@ -126,14 +136,29 @@ class PromotionPosterController extends Controller
         ]);
         $draftPromotion->refreshDiscountPercentage();
 
-        $prompt = $this->buildPrompt($product);
+        $previous = session(self::DRAFT_SESSION_KEY);
+        $photoPath = null;
+        $photoHash = null;
+        if ($request->hasFile('product_photo')) {
+            $photoPath = $request->file('product_photo')->store('promotions/photos', 'public');
+            $photoHash = hash_file('sha256', $request->file('product_photo')->getRealPath());
+        } elseif (! $request->boolean('remove_photo') && ($previous['details']['product_id'] ?? null) === $product->id
+            && ! empty($previous['photo_path']) && Storage::disk('public')->exists($previous['photo_path'])) {
+            $photoPath = $previous['photo_path'];
+            $photoHash = $previous['photo_hash'] ?? null;
+        }
+        $draftPromotion->product_photo_path = $photoPath;
+        $photo = $photoPath ? Storage::disk('public')->get($photoPath) : null;
+        $prompt = $this->buildPrompt($product, $photo !== null);
         $backgroundBytes = $this->aiService->generateImage($prompt);
         $usedAi = $backgroundBytes !== null;
-        $posterBytes = $this->composer->compose($backgroundBytes ?? '', $draftPromotion);
+        $posterBytes = $this->composer->compose($backgroundBytes ?? '', $draftPromotion, $photo);
 
-        $previous = session(self::DRAFT_SESSION_KEY);
         if ($previous) {
             Storage::disk('public')->delete($previous['path']);
+            if (! empty($previous['photo_path']) && $previous['photo_path'] !== $photoPath) {
+                Storage::disk('public')->delete($previous['photo_path']);
+            }
         }
 
         $path = 'promotions/pending/draft-'.Str::random(12).'.jpg';
@@ -144,15 +169,19 @@ class PromotionPosterController extends Controller
             'details' => $draftPromotion->posterDetails(),
             'prompt' => $prompt,
             'used_ai' => $usedAi,
+            'photo_path' => $photoPath,
+            'photo_hash' => $photoHash,
             'created_at' => now()->toIso8601String(),
         ]]);
 
         return response()->json([
             'poster_url' => Storage::disk('public')->url($path),
+            'photo_url' => $photoPath ? Storage::disk('public')->url($photoPath) : null,
             'used_ai' => $usedAi,
             'message' => $usedAi
                 ? __('Poster generated.')
-                : __('AI image service is unavailable right now — generated a placeholder poster instead. You can still use it or try again shortly.'),
+                : ($photo ? __('The AI background is unavailable. Your product photo was kept on a plain background.')
+                    : __('AI image service is unavailable right now — generated a placeholder poster instead. You can still use it or try again shortly.')),
         ]);
     }
 
@@ -161,16 +190,22 @@ class PromotionPosterController extends Controller
         $draft = session(self::DRAFT_SESSION_KEY);
 
         if ($draft) {
-            Storage::disk('public')->delete($draft['path']);
+            Storage::disk('public')->delete(array_filter([$draft['path'], $draft['photo_path'] ?? null]));
             session()->forget(self::DRAFT_SESSION_KEY);
         }
 
         return response()->json(['message' => __('Generated poster discarded.')]);
     }
 
-    private function buildPrompt(?Product $product): string
+    private function buildPrompt(?Product $product, bool $hasPhoto = false): string
     {
         $category = $product?->category?->name ?? 'grocery';
+
+        if ($hasPhoto) {
+            return 'Create an empty supermarket advertising background with a soft white and blue gradient. '.
+                'Leave a large clean space in the center for a product photo that will be added later. '.
+                'No products, no food, no packaging, no text, no numbers, no logos, no watermark.';
+        }
 
         return "Create a premium supermarket promotional poster background. ".
             "Store: Foodcity. Product: {$product?->name} ({$category}). ".

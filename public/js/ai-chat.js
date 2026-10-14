@@ -16,7 +16,7 @@
     const textarea = document.getElementById('ai-chat-textarea');
     const sendBtn = document.getElementById('ai-send-btn');
     const newChatBtn = document.getElementById('ai-new-chat-btn');
-    const newChatBtn2 = document.getElementById('ai-new-chat-btn-2');
+    const headerNewChatBtn = document.getElementById('ai-new-chat-btn-2');
     const clearChatBtn = document.getElementById('ai-clear-chat-btn');
     const jumpBottomBtn = document.getElementById('ai-jump-bottom-btn');
 
@@ -357,7 +357,7 @@
         scrollToBottom();
 
         if (isNewConversation) {
-          addOrUpdateSidebarConversation(data.conversation_id, data.conversation_title);
+          updateChatList(data.conversation_id, data.conversation_title);
         } else {
           updateSidebarTitle(data.conversation_id, data.conversation_title);
         }
@@ -490,7 +490,7 @@
       });
     }
 
-    function addOrUpdateSidebarConversation(id, title) {
+    function updateChatList(id, title) {
       const existing = historyList.querySelector(`.ai-history-item[data-id="${id}"]`);
       if (existing) {
         updateSidebarTitle(id, title);
@@ -506,8 +506,8 @@
         historyList.insertBefore(todayLabel, historyList.firstChild);
       }
 
-      const noConversationsMsg = historyList.querySelector(':scope > .text-muted');
-      noConversationsMsg?.remove();
+      const emptyMessage = historyList.querySelector(':scope > .text-muted');
+      emptyMessage?.remove();
 
       const item = document.createElement('div');
       item.className = 'ai-history-item active';
@@ -538,7 +538,7 @@
     }
 
     newChatBtn.addEventListener('click', startNewChat);
-    if (newChatBtn2) newChatBtn2.addEventListener('click', startNewChat);
+    if (headerNewChatBtn) headerNewChatBtn.addEventListener('click', startNewChat);
 
     clearChatBtn.addEventListener('click', () => {
       if (!activeConversationId) {

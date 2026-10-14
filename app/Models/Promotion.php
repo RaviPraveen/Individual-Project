@@ -29,6 +29,7 @@ class Promotion extends Model
         'discount_percentage',
         'poster_path',
         'poster_source',
+        'product_photo_path',
         'ai_generations',
         'pending_poster_path',
         'pending_poster_used_ai',
@@ -148,6 +149,7 @@ class Promotion extends Model
             'description' => (string) $this->description,
             'current_price' => (string) $this->current_price,
             'offer_price' => (string) $this->offer_price,
+            'product_photo_path' => $this->product_photo_path,
         ];
     }
 }

@@ -60,6 +60,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::resource('supplier-returns', SupplierReturnController::class)->only(['index', 'create', 'store', 'show']);
         Route::post('supplier-returns/{supplier_return}/complete', [SupplierReturnController::class, 'complete'])->name('supplier-returns.complete');
         Route::post('supplier-returns/{supplier_return}/cancel', [SupplierReturnController::class, 'cancel'])->name('supplier-returns.cancel');
+        Route::patch('supplier-returns/{supplier_return}/settlement', [SupplierReturnController::class, 'settlement'])->name('supplier-returns.settlement');
         Route::get('supplier-returns/{supplier_return}/pdf', [SupplierReturnController::class, 'pdf'])->name('supplier-returns.pdf');
 
         Route::get('/reorder-assistant', [ReorderController::class, 'index'])->name('reorder.index');

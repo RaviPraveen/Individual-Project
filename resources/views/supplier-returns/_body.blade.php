@@ -42,8 +42,8 @@
     <hr style="border-top: 1px dashed #999;">
 
     <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
-        <tr><td>Resolution</td><td style="text-align: right;">{{ ucfirst($supplierReturn->resolution) }}</td></tr>
-        <tr style="font-weight: 700;"><td>Credit Note Value</td><td style="text-align: right;">{{ number_format($supplierReturn->credit_note_value, 2) }}</td></tr>
+        <tr><td>Resolution</td><td style="text-align: right;">{{ $supplierReturn->resolution === 'none' ? 'Not settled' : ucfirst($supplierReturn->resolution) }}</td></tr>
+        <tr style="font-weight: 700;"><td>Credit / Refund Amount (Rs.)</td><td style="text-align: right;">{{ number_format($supplierReturn->credit_note_value, 2) }}</td></tr>
     </table>
 
     <hr style="border-top: 1px dashed #999;">

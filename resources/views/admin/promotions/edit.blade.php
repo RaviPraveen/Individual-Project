@@ -19,7 +19,7 @@
             @endif
         </div>
         <div class="card-body">
-            <p class="small text-muted">{{ __('Save changes to the product, title, description or prices before generating a poster. These changes clear the previous poster.') }}</p>
+            <p class="small text-muted">{{ __('Save changes to the product, photo, title, description or prices before generating a poster. These changes clear the previous poster.') }}</p>
             <div class="row g-4 align-items-start">
                 <div class="col-md-5">
                     <div class="text-muted small mb-2 fw-semibold text-uppercase" style="letter-spacing:0.05em;font-size:0.7rem;">{{ __('Live Poster') }}</div>
@@ -114,8 +114,18 @@
             const previewNote = document.getElementById('poster-preview-note');
             const savedDetails = @json($promotion->posterDetails());
 
+            let lockedFields = [];
+            function setBusy(busy) {
+                if (busy) lockedFields = [btnGenerate, btnApprove, btnDiscard, btnDeleteLive,
+                    ...document.getElementById('title').form.elements].filter(field => !field.disabled);
+                lockedFields.forEach(field => field.disabled = busy);
+                if (!busy) lockedFields = [];
+            }
+
             function hasUnsavedPosterDetails() {
-                const changed = ['product_id', 'title', 'description', 'offer_price'].some(key => {
+                const changed = document.getElementById('product_photo').files.length > 0
+                    || document.getElementById('remove_photo').checked
+                    || ['product_id', 'title', 'description', 'offer_price'].some(key => {
                     const value = document.getElementById(key).value.trim();
                     return key === 'product_id' || key === 'offer_price'
                         ? Number(value) !== Number(savedDetails[key]) : value !== savedDetails[key];
@@ -144,14 +154,17 @@
 
             btnGenerate.addEventListener('click', function () {
                 if (hasUnsavedPosterDetails()) return;
-                btnGenerate.disabled = true;
+                setBusy(true);
                 skeleton.classList.remove('d-none');
                 document.getElementById('poster-preview-img')?.classList.add('d-none');
 
                 fetch(generateUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                }).then(r => r.json()).then(data => {
+                }).then(r => r.json().then(data => {
+                    if (!r.ok) throw new Error(data.message || 'Unable to generate poster.');
+                    return data;
+                })).then(data => {
                     skeleton.classList.add('d-none');
                     document.getElementById('poster-preview-img')?.classList.remove('d-none');
                     setPreviewImage(data.poster_url);
@@ -161,11 +174,11 @@
                     previewNote.classList.toggle('d-none', data.used_ai);
                     btnGenerate.disabled = false;
                     window.posToast ? window.posToast(data.message, data.used_ai ? 'success' : 'warning') : null;
-                }).catch(() => {
+                }).catch(error => {
                     skeleton.classList.add('d-none');
                     btnGenerate.disabled = false;
-                    window.posToast ? window.posToast('{{ __('Something went wrong generating the poster.') }}', 'danger') : null;
-                });
+                    window.posToast ? window.posToast(error.message, 'danger') : null;
+                }).finally(() => setBusy(false));
             });
 
             // Update the preview and show a toast without reloading the page.

@@ -35,6 +35,7 @@
 
 @if ($user)
     <div class="mb-3 form-check">
+        <input type="hidden" name="is_active" value="0">
         <input id="is_active" type="checkbox" class="form-check-input" name="is_active" value="1"
             @checked(old('is_active', $user->is_active))>
         <label for="is_active" class="form-check-label">{{ __('Active') }}</label>

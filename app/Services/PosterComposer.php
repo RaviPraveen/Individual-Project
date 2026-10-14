@@ -18,7 +18,7 @@ class PosterComposer
 
     private const ACCENT_RED = [239, 68, 68];
 
-    public function compose(string $backgroundBytes, Promotion $promotion): string
+    public function compose(string $backgroundBytes, Promotion $promotion, ?string $photoBytes = null): string
     {
         $background = @imagecreatefromstring($backgroundBytes);
 
@@ -28,6 +28,10 @@ class PosterComposer
 
         imagesavealpha($canvas, true);
         imagealphablending($canvas, true);
+
+        if ($photoBytes) {
+            $this->drawPhoto($canvas, $photoBytes);
+        }
 
         $this->drawBrandBadge($canvas);
         $this->drawDiscountBadge($canvas, (float) $promotion->discount_percentage);
@@ -43,6 +47,26 @@ class PosterComposer
         }
 
         return $bytes;
+    }
+
+    // Fit the uploaded product above the price panel without cropping it.
+    private function drawPhoto(GdImage $canvas, string $bytes): void
+    {
+        $photo = @imagecreatefromstring($bytes);
+        if (! $photo) {
+            return;
+        }
+
+        $width = imagesx($photo);
+        $height = imagesy($photo);
+        $scale = min(760 / $width, 430 / $height);
+        $newWidth = (int) round($width * $scale);
+        $newHeight = (int) round($height * $scale);
+        $x = (int) ((self::WIDTH - $newWidth) / 2);
+        $y = 110 + (int) ((430 - $newHeight) / 2);
+
+        imagecopyresampled($canvas, $photo, $x, $y, 0, 0, $newWidth, $newHeight, $width, $height);
+        imagedestroy($photo);
     }
 
     // Crop the background to fill the poster without stretching it.
@@ -118,10 +142,9 @@ class PosterComposer
     {
         $panelTop = 560;
 
-        // Fade the bottom panel into the photo.
         for ($y = $panelTop; $y < self::HEIGHT; $y++) {
             $ratio = ($y - $panelTop) / (self::HEIGHT - $panelTop);
-            $alpha = (int) (127 - min($ratio * 108, 108)); // GD alpha: 127 is transparent and 0 is opaque.
+            $alpha = (int) (127 - min($ratio * 108, 108));
             $color = imagecolorallocatealpha($canvas, 15, 23, 42, max(0, $alpha));
             imageline($canvas, 0, $y, self::WIDTH, $y, $color);
         }
@@ -141,7 +164,6 @@ class PosterComposer
             $this->leftText($canvas, $line, $this->font('bold'), 40, $left, $titleY + ($i * 50), [255, 255, 255]);
         }
 
-        // Strike through the original price before drawing the offer price.
         $priceY = $titleY + (min(count($titleLines), 2) * 50) + 50;
         $currentLabel = 'Rs '.number_format((float) $promotion->current_price, 2);
         $currentWidth = $this->textWidth($this->font('regular'), 24, $currentLabel);

@@ -44,6 +44,10 @@
                             <div class="mt-2.5 d-none p-3 bg-white rounded-3 border" id="ai-order-preview">
                                 <div class="small text-muted mb-2 fw-bold text-uppercase" style="letter-spacing:0.05em;">{{ __('Review Parsed Items:') }}</div>
                                 <div id="ai-order-preview-list" class="list-group mb-3"></div>
+                                <div id="ai-order-unmatched" class="alert alert-warning d-none">
+                                    <div class="fw-semibold mb-1">{{ __('Add these items manually:') }}</div>
+                                    <ul id="ai-order-unmatched-list" class="mb-0"></ul>
+                                </div>
                                 <div class="d-flex gap-2">
                                     <button type="button" class="btn btn-primary btn-sm rounded-2 px-3" id="ai-order-add-btn"><i class="bi bi-cart-plus me-1"></i> {{ __('Add to Cart') }}</button>
                                     <button type="button" class="btn btn-outline-secondary btn-sm rounded-2 px-3" id="ai-order-cancel-btn">{{ __('Cancel') }}</button>
@@ -700,23 +704,29 @@
             const aiOrderError = document.getElementById('ai-order-error');
             const aiOrderPreview = document.getElementById('ai-order-preview');
             const aiOrderPreviewList = document.getElementById('ai-order-preview-list');
+            const aiMissingBox = document.getElementById('ai-order-unmatched');
+            const aiMissingList = document.getElementById('ai-order-unmatched-list');
             const aiOrderAddBtn = document.getElementById('ai-order-add-btn');
             const aiOrderCancelBtn = document.getElementById('ai-order-cancel-btn');
 
             let aiParsedItems = [];
+            let aiMissing = [];
 
             function renderAiPreview() {
-                aiOrderPreviewList.innerHTML = '';
+                aiOrderPreviewList.replaceChildren();
                 aiParsedItems.forEach((item, index) => {
                     const row = document.createElement('div');
                     row.className = 'list-group-item d-flex justify-content-between align-items-center py-2 px-3';
                     row.innerHTML = `
-                        <span class="fw-bold text-dark">${item.name}</span>
+                        <span class="fw-bold text-dark ai-item-name"></span>
                         <div class="d-flex align-items-center gap-2">
-                            <input type="number" class="form-control form-control-sm ai-qty-input fw-bold" style="width:70px;" min="1" max="${item.stock_qty}" value="${item.quantity}">
+                            <input type="number" class="form-control form-control-sm ai-qty-input fw-bold" style="width:70px;" min="1">
                             <button type="button" class="btn btn-outline-danger btn-sm rounded-circle ai-remove-btn" style="width:28px;height:28px;padding:0;"><i class="bi bi-x"></i></button>
                         </div>
                     `;
+                    row.querySelector('.ai-item-name').textContent = item.name;
+                    row.querySelector('.ai-qty-input').max = item.stock_qty;
+                    row.querySelector('.ai-qty-input').value = item.quantity;
                     row.querySelector('.ai-qty-input').addEventListener('input', (e) => {
                         let qty = parseInt(e.target.value) || 1;
                         qty = Math.max(1, Math.min(qty, item.stock_qty));
@@ -730,24 +740,32 @@
                     aiOrderPreviewList.appendChild(row);
                 });
 
-                if (aiParsedItems.length === 0) {
-                    aiOrderPreview.classList.add('d-none');
-                }
+                aiMissingList.replaceChildren();
+                aiMissing.forEach(item => {
+                    const row = document.createElement('li');
+                    row.textContent = item;
+                    aiMissingList.appendChild(row);
+                });
+                aiMissingBox.classList.toggle('d-none', aiMissing.length === 0);
+                aiOrderAddBtn.disabled = aiParsedItems.length === 0;
+                aiOrderPreview.classList.toggle('d-none', aiParsedItems.length === 0 && aiMissing.length === 0);
             }
 
-            function resetAiOrderBox() {
+            function resetAiOrderBox(clearText = true) {
                 aiParsedItems = [];
-                aiOrderTextInput.value = '';
-                aiOrderPreview.classList.add('d-none');
+                aiMissing = [];
+                if (clearText) aiOrderTextInput.value = '';
                 aiOrderError.classList.add('d-none');
+                renderAiPreview();
             }
 
             aiOrderParseBtn.addEventListener('click', () => {
                 const text = aiOrderTextInput.value.trim();
-                aiOrderError.classList.add('d-none');
+                resetAiOrderBox(false);
                 if (!text) return;
 
                 aiOrderParseBtn.disabled = true;
+                aiOrderTextInput.disabled = true;
                 aiOrderParseBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Parsing...';
                 const csrf = document.querySelector('meta[name="csrf-token"]').content;
 
@@ -755,34 +773,48 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
                     body: JSON.stringify({ text }),
-                }).then(r => r.json()).then(data => {
-                    aiOrderParseBtn.disabled = false;
-                    aiOrderParseBtn.innerHTML = '<i class="bi bi-magic"></i> {{ __('Parse') }}';
-
+                }).then(r => {
+                    if (!r.ok) throw new Error('Order request failed');
+                    return r.json();
+                }).then(data => {
                     if (data.error) {
                         aiOrderError.textContent = data.error;
                         aiOrderError.classList.remove('d-none');
                         return;
                     }
 
-                    if (!data.items || data.items.length === 0) {
+                    if (data.configured === false) {
+                        aiOrderError.textContent = '{{ __('The AI assistant is not configured. Add items manually.') }}';
+                        aiOrderError.classList.remove('d-none');
+                        return;
+                    }
+
+                    if (!Array.isArray(data.items) || !Array.isArray(data.unmatched)) {
+                        throw new Error('Invalid order response');
+                    }
+
+                    aiMissing = data.unmatched.filter(item => typeof item === 'string' && item.trim());
+                    if (data.items.length === 0 && aiMissing.length === 0) {
                         aiOrderError.textContent = '{{ __('No matching products found — try rephrasing or add items manually.') }}';
                         aiOrderError.classList.remove('d-none');
                         return;
                     }
 
                     aiParsedItems = data.items.map(item => ({ ...item, selling_price: parseFloat(item.selling_price) }));
-                    aiOrderPreview.classList.remove('d-none');
                     renderAiPreview();
                 }).catch(() => {
-                    aiOrderParseBtn.disabled = false;
-                    aiOrderParseBtn.innerHTML = '<i class="bi bi-magic"></i> {{ __('Parse') }}';
+                    resetAiOrderBox(false);
                     aiOrderError.textContent = '{{ __('Something went wrong. Please try again.') }}';
                     aiOrderError.classList.remove('d-none');
+                }).finally(() => {
+                    aiOrderParseBtn.disabled = false;
+                    aiOrderTextInput.disabled = false;
+                    aiOrderParseBtn.innerHTML = '<i class="bi bi-magic"></i> {{ __('Parse') }}';
                 });
             });
 
             aiOrderAddBtn.addEventListener('click', () => {
+                if (aiParsedItems.length === 0) return;
                 aiParsedItems.forEach(item => {
                     addToCart({
                         id: item.product_id,
@@ -794,10 +826,15 @@
                 });
                 renderCart();
                 window.posToast ? window.posToast('Added items to cart from AI Quick Order.', 'success') : null;
-                resetAiOrderBox();
+                if (aiMissing.length > 0) {
+                    aiParsedItems = [];
+                    renderAiPreview();
+                } else {
+                    resetAiOrderBox();
+                }
             });
 
-            aiOrderCancelBtn.addEventListener('click', resetAiOrderBox);
+            aiOrderCancelBtn.addEventListener('click', () => resetAiOrderBox());
 
             aiOrderTextInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
