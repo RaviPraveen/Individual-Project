@@ -120,7 +120,7 @@ class PromotionController extends Controller
             $finalPath = 'promotions/'.basename($draft['path']);
             Storage::disk('public')->move($draft['path'], $finalPath);
             $promotion->poster_path = $finalPath;
-            $promotion->poster_source = 'ai';
+            $promotion->poster_source = ($draft['used_ai'] ?? false) ? 'ai' : 'template';
             $promotion->ai_generations = [[
                 'path' => $finalPath,
                 'prompt' => $draft['prompt'] ?? null,
@@ -129,7 +129,7 @@ class PromotionController extends Controller
             ]];
         }
 
-        if ($draft && $promotion->poster_source !== 'ai') {
+        if ($draft) {
             Storage::disk('public')->delete($draft['path']);
         }
         if (! empty($draft['photo_path']) && $draft['photo_path'] !== $promotion->product_photo_path) {

@@ -13,8 +13,8 @@
         <div class="card-header bg-white fw-bold text-dark border-bottom py-3 d-flex align-items-center justify-content-between">
             <span><i class="bi bi-stars text-warning me-1.5"></i> {{ __('AI Promotion Poster Generator') }}</span>
             @if ($promotion->poster_path)
-                <span class="badge {{ $promotion->poster_source === 'ai' ? 'bg-primary-subtle text-primary' : 'bg-secondary-subtle text-secondary' }}">
-                    {{ $promotion->poster_source === 'ai' ? __('Live — AI Generated') : __('Live — Custom Upload') }}
+                <span id="live-poster-label" class="badge {{ $promotion->poster_source === 'ai' ? 'bg-primary-subtle text-primary' : 'bg-secondary-subtle text-secondary' }}">
+                    {{ __('Live') }} — {{ __($promotion->posterLabel()) }}
                 </span>
             @endif
         </div>
@@ -190,7 +190,10 @@
                 }).then(r => r.json().then(data => {
                     if (!r.ok) throw new Error(data.message || 'Could not approve the poster.');
                     return data;
-                })).then(() => {
+                })).then(data => {
+                    document.getElementById('live-poster-label').textContent = '{{ __('Live') }} — ' + data.poster_label;
+                    const currentLabel = document.getElementById('current-poster-label');
+                    if (currentLabel) currentLabel.textContent = data.poster_label;
                     const pendingSrc = document.getElementById('poster-preview-img')?.src;
                     if (pendingSrc) {
                         let liveImg = document.getElementById('live-poster-img');

@@ -53,9 +53,9 @@
     }
 
     function fetchJson(url, options) {
-      return fetch(url, Object.assign({
+      return fetch(url, Object.assign({}, options, {
         headers: Object.assign({ 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken }, (options && options.headers) || {}),
-      }, options)).then(r => r.json().then(data => ({ ok: r.ok, data })));
+      })).then(r => r.json().then(data => ({ ok: r.ok, data })));
     }
 
     // Show the jump button when older messages are being viewed.

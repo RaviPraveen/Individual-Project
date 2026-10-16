@@ -253,12 +253,15 @@ class BillingController extends Controller
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
             ->join('products', 'products.id', '=', 'sale_items.product_id')
             ->where('sales.customer_id', $customer->id)
+            ->where('products.is_active', true)
+            ->where('products.stock_qty', '>', 0)
+            ->whereNotIn('products.name', $validated['cart_items'])
             ->selectRaw('products.name, SUM(sale_items.quantity) as qty')
             ->groupBy('products.name')
             ->orderByDesc('qty')
             ->limit(5)
             ->get()
-            ->map(fn ($row) => "{$row->name} (bought {$row->qty} total)")
+            ->map(fn ($row) => "{$row->name} ({$row->qty} units bought in total)")
             ->implode(', ');
 
         if ($history === '') {
@@ -270,8 +273,9 @@ class BillingController extends Controller
         $prompt = "You are assisting a supermarket cashier at Welcome Foodcity, Batticaloa. ".
             "A returning customer is at the till. Based ONLY on the data below, give the cashier ONE short, ".
             "natural suggestion (max 20 words) for something to mention to this customer — e.g. a product they ".
-            "usually buy that isn't in today's cart. If nothing is worth suggesting, reply exactly: NONE\n\n".
-            "Customer's usual purchases: {$history}\n".
+            "bought before that isn't in today's cart. Do not infer how many visits they made. ".
+            "If nothing is worth suggesting, reply exactly: NONE\n\n".
+            "Available products bought previously, excluding today's cart: {$history}\n".
             "In today's cart already: {$cartList}";
 
         $suggestion = $aiService->generate($prompt);

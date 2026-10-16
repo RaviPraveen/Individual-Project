@@ -12,6 +12,30 @@ class AiQuickOrderTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_checkout_suggestions_exclude_inactive_out_of_stock_and_cart_products(): void
+    {
+        $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
+        $customer = \App\Models\Customer::create(['name' => 'Test Customer']);
+        $sale = \App\Models\Sale::create(['invoice_no' => 'TEST-AI', 'cashier_id' => $cashier->id,
+            'customer_id' => $customer->id, 'subtotal' => 400, 'discount' => 0, 'tax' => 0,
+            'total' => 400, 'payment_method' => 'cash']);
+        foreach ([['Available', true, 5], ['Inactive', false, 5], ['Empty', true, 0], ['In Cart', true, 5]] as [$name, $active, $stock]) {
+            $product = Product::create(['name' => $name, 'sku' => $name, 'is_active' => $active,
+                'cost_price' => 50, 'selling_price' => 100, 'stock_qty' => $stock, 'reorder_level' => 2]);
+            $sale->items()->create(['product_id' => $product->id, 'quantity' => 1, 'unit_price' => 100, 'line_total' => 100]);
+        }
+        $this->mock(AiService::class, function ($mock) {
+            $mock->shouldReceive('isConfigured')->andReturn(true);
+            $mock->shouldReceive('generate')->once()->withArgs(fn ($prompt) => str_contains($prompt, 'Available (1 units')
+                && ! str_contains($prompt, 'Inactive') && ! str_contains($prompt, 'Empty')
+                && ! str_contains($prompt, 'In Cart (1 units'))
+                ->andReturn('Would you like Available?');
+        });
+        $this->actingAs($cashier)->postJson(route('cashier.billing.upsell'), [
+            'customer_id' => $customer->id, 'cart_items' => ['In Cart'],
+        ])->assertOk()->assertJsonPath('suggestion', 'Would you like Available?');
+    }
+
     public function test_returns_unconfigured_when_ai_service_has_no_api_key(): void
     {
         $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);

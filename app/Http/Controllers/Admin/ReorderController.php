@@ -50,7 +50,7 @@ class ReorderController extends Controller
             return null;
         }
 
-        $cacheKey = 'reorder_narrative_'.$suggestions->count().'_'.now()->format('Y_m_d_H').'_'.intdiv(now()->minute, 30);
+        $cacheKey = 'reorder_narrative_cf_'.$suggestions->count().'_'.now()->format('Y_m_d_H').'_'.intdiv(now()->minute, 30);
 
         $cached = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($request, $suggestions) {
             $list = $suggestions->map(fn ($f) => "{$f['product']->name}: stock {$f['product']->stock_qty}, reorder level {$f['product']->reorder_level}, ".
@@ -59,7 +59,8 @@ class ReorderController extends Controller
             $prompt = 'You are a retail purchasing analyst for a Sri Lankan supermarket called Welcome Foodcity. '.
                 'Based ONLY on the following computed stock and demand data, write a short (3-4 sentence) '.
                 'purchasing recommendation: which products are most urgent to reorder and roughly why. '.
-                "Do not invent any numbers beyond what is given.\n\n{$list}";
+                'Do not invent any numbers or predict a stockout date. '.
+                "Low stock is a restocking signal; it does not prove stock will run out.\n\n{$list}";
 
             $narrative = $this->aiService->generate($prompt);
 

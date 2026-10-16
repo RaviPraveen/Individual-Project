@@ -124,7 +124,7 @@
                 <div class="cd-idle" id="cd-idle">
                     <div class="mark-lg">🛒</div>
                     <h1>{{ config('app.name') }}</h1>
-                    <p class="cd-idle-subtitle">{{ __('Commercial SaaS POS') }}</p>
+                    <p class="cd-idle-subtitle">{{ __('Point of Sale') }}</p>
                     <p class="tagline">{{ __('Batticaloa, Sri Lanka') }}</p>
                 </div>
 

@@ -5,7 +5,7 @@
                 <span class="ai-copilot-mark">✨</span>
                 <div class="d-flex flex-column">
                     <span class="fw-extrabold text-white lh-1 fs-6">Foodcity AI</span>
-                    <span class="text-indigo-400 fw-bold uppercase mt-0.5" style="font-size:0.65rem; letter-spacing:0.08em; color: #A5B4FC;">Copilot v2026</span>
+                    <span class="text-indigo-400 fw-bold uppercase mt-0.5" style="font-size:0.65rem; letter-spacing:0.08em; color: #A5B4FC;">AI Assistant</span>
                 </div>
             </div>
         </div>
@@ -48,8 +48,8 @@
                     <i class="bi bi-layout-sidebar me-1"></i> {{ __('Chats') }}
                 </button>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary-subtle text-primary rounded-pill fw-bold"><i class="bi bi-lightning-charge-fill me-1"></i> {{ __('Foodcity AI Copilot') }}</span>
-                    <span class="text-muted small d-none d-md-inline">&middot; {{ __('Context Aware Retail Intelligence') }}</span>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill fw-bold"><i class="bi bi-lightning-charge-fill me-1"></i> {{ __('Foodcity AI Assistant') }}</span>
+                    <span class="text-muted small d-none d-md-inline">&middot; {{ __('Ask about sales and stock') }}</span>
                 </div>
             </div>
             <div class="d-flex align-items-center gap-2">
@@ -65,16 +65,16 @@
         @if (! $aiConfigured)
             <div class="alert alert-warning border-0 bg-warning-subtle text-warning-emphasis m-3 mb-0 py-2.5 px-3 rounded-3 small d-flex align-items-center gap-2">
                 <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-                <div>{{ __('The Hugging Face service is not configured. Contact the administrator to enable the AI assistant.') }}</div>
+                <div>{{ __('The AI service is not configured. Contact the administrator to enable the AI assistant.') }}</div>
             </div>
         @endif
 
         <div class="ai-copilot-messages-viewport" id="ai-chat-messages">
             <div class="ai-welcome-hero my-auto text-center py-5 {{ $messages->isNotEmpty() ? 'd-none' : '' }}" id="ai-chat-empty">
                 <div class="ai-welcome-badge mb-3">✨</div>
-                <h1 class="h2 fw-extrabold text-dark mb-2">{{ __('Hello, I\'m Foodcity AI Copilot.') }}</h1>
+                <h1 class="h2 fw-extrabold text-dark mb-2">{{ __('Hello, I\'m your Foodcity AI Assistant.') }}</h1>
                 <p class="text-muted fs-6 mb-4 max-w-lg mx-auto">
-                    {{ __('I can help you analyze products, sales performance, inventory stock, supplier orders, and generate instant business intelligence.') }}
+                    {{ __('Ask me about products, sales, stock and supplier orders.') }}
                 </p>
 
                 <div class="ai-suggestion-grid max-w-2xl mx-auto">
@@ -131,7 +131,7 @@
                         </button>
                     </div>
                     <div class="text-center text-muted ai-footer-disclaimer mt-2">
-                        {{ __('Foodcity AI Copilot can analyze real-time inventory and sales database metrics. Press Enter to send · Shift+Enter for new line.') }}
+                        {{ __('The AI Assistant uses your sales and stock records. Press Enter to send · Shift+Enter for a new line.') }}
                     </div>
                 </form>
             </div>

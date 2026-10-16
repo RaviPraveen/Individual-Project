@@ -23,10 +23,11 @@ return [
         ],
     ],
 
-    'huggingface' => [
-        'key' => env('HUGGINGFACE_API_KEY'),
-        'model' => env('HUGGINGFACE_MODEL', 'meta-llama/Llama-3.1-8B-Instruct'),
-        'image_model' => env('HUGGINGFACE_IMAGE_MODEL', 'stabilityai/stable-diffusion-3-medium-diffusers'),
+    'cloudflare' => [
+        'account_id' => env('CLOUDFLARE_ACCOUNT_ID'),
+        'token' => env('CLOUDFLARE_API_TOKEN'),
+        'text_model' => env('CLOUDFLARE_TEXT_MODEL', '@cf/meta/llama-3.1-8b-instruct-fp8-fast'),
+        'image_model' => env('CLOUDFLARE_IMAGE_MODEL', '@cf/black-forest-labs/flux-1-schnell'),
     ],
 
 ];

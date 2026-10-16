@@ -152,4 +152,19 @@ class Promotion extends Model
             'product_photo_path' => $this->product_photo_path,
         ];
     }
+
+    public function posterLabel(): string
+    {
+        if ($this->poster_source === 'custom') {
+            return 'Custom Upload';
+        }
+
+        foreach ($this->ai_generations ?? [] as $entry) {
+            if (($entry['path'] ?? null) === $this->poster_path && ($entry['used_ai'] ?? true) === false) {
+                return 'Template Poster';
+            }
+        }
+
+        return $this->poster_source === 'template' ? 'Template Poster' : 'AI Generated';
+    }
 }

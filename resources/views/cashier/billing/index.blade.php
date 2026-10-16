@@ -330,12 +330,16 @@
             fetch(`${productSearchUrl}?q=${encodeURIComponent(term)}`)
                 .then(r => r.json())
                 .then(products => {
-                    renderProductResults(products);
+                    if (productSearchInput.value.trim() === term.trim()) {
+                        renderProductResults(products);
+                    }
                 })
                 .finally(() => productSearchSpinner.classList.add('d-none'));
         }
 
         productSearchInput.addEventListener('input', (e) => {
+            productResults.innerHTML = '';
+            highlightedIndex = -1;
             productSearchClearBtn.classList.toggle('d-none', !e.target.value);
             debounce((term) => searchProducts(term), 120)(e.target.value);
         });
@@ -369,6 +373,7 @@
 
             if (e.key === 'Enter') {
                 e.preventDefault();
+                clearTimeout(searchDebounce);
 
                 // Use the keyboard selection before trying an exact text match.
                 if (highlightedIndex >= 0 && items[highlightedIndex]) {
@@ -379,6 +384,7 @@
                 const term = e.target.value.trim();
                 if (!term) return;
                 fetch(`${productSearchUrl}?q=${encodeURIComponent(term)}`).then(r => r.json()).then(products => {
+                    if (productSearchInput.value.trim() !== term) return;
                     const exact = products.find(p => p.barcode === term || p.sku === term);
                     if (exact) {
                         addToCart(exact);
@@ -511,8 +517,8 @@
                 discountPercent = 0;
                 discountInput.value = 0;
             }
-            const discountAmount = subtotal * discountPercent / 100;
-            const taxAmount = (subtotal - discountAmount) * taxPercent / 100;
+            const discountAmount = Math.round((subtotal * discountPercent / 100 + Number.EPSILON) * 100) / 100;
+            const taxAmount = Math.round(((subtotal - discountAmount) * taxPercent / 100 + Number.EPSILON) * 100) / 100;
             const totalBeforePoints = subtotal - discountAmount + taxAmount;
 
             let pointsToRedeem = 0;
@@ -537,7 +543,7 @@
             }
 
             document.getElementById('points_to_redeem_input_hidden').value = pointsToRedeem;
-            const redemptionValue = pointsToRedeem * pointsRedeemValue;
+            const redemptionValue = Math.round((pointsToRedeem * pointsRedeemValue + Number.EPSILON) * 100) / 100;
             const total = totalBeforePoints - redemptionValue;
 
             const wantsBag = wantsBagInput && wantsBagInput.checked;

@@ -85,12 +85,15 @@ class PromotionPosterController extends Controller
 
         $promotion->update([
             'poster_path' => $promotion->pending_poster_path,
-            'poster_source' => 'ai',
+            'poster_source' => $promotion->pending_poster_used_ai ? 'ai' : 'template',
             'pending_poster_path' => null,
             'pending_poster_used_ai' => false,
         ]);
 
-        return response()->json(['message' => __('Poster approved and is now live.')]);
+        return response()->json([
+            'message' => __('Poster approved and is now live.'),
+            'poster_label' => __($promotion->posterLabel()),
+        ]);
     }
 
     public function discard(Promotion $promotion): JsonResponse

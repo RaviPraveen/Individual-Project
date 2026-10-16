@@ -8,7 +8,7 @@ use App\Models\Promotion;
 use App\Models\SaleItem;
 use Illuminate\Support\Facades\Cache;
 
-// Build recommendations from sales data, with optional wording from Hugging Face.
+// Build recommendations from sales data, with optional AI wording.
 class PromotionRecommendationService
 {
     public function __construct(private AiService $aiService) {}
@@ -16,7 +16,7 @@ class PromotionRecommendationService
     public function recommendations(?int $userId = null): array
     {
         return Cache::remember(
-            'promotion_recommendations_'.intdiv(now()->minute, 30).'_'.now()->format('YmdH'),
+            'promotion_recommendations_cf_'.intdiv(now()->minute, 30).'_'.now()->format('YmdH'),
             now()->addMinutes(30),
             fn () => $this->build($userId),
         );

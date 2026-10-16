@@ -91,7 +91,7 @@ class ReturnController extends Controller
         $validated = $request->validate([
             'sale_id' => ['required', 'exists:sales,id'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.sale_item_id' => ['required', 'integer', 'exists:sale_items,id'],
+            'items.*.sale_item_id' => ['required', 'integer', 'distinct', 'exists:sale_items,id'],
             'items.*.quantity' => ['required', 'integer', 'min:0'],
             'reason' => ['nullable', 'string', 'max:1000'],
             'refund_method' => ['required', 'in:cash,card,other'],

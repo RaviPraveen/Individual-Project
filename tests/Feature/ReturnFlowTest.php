@@ -165,4 +165,34 @@ class ReturnFlowTest extends TestCase
         $this->assertDatabaseCount('sale_returns', 0);
         $this->assertEquals(18, $product->fresh()->stock_qty);
     }
+
+    public function test_duplicate_sale_item_rows_do_not_refund_or_restock_twice(): void
+    {
+        $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
+        $product = Product::create([
+            'name' => 'Return Test Milk', 'sku' => 'SKU-DUPLICATE-RETURN',
+            'cost_price' => 200, 'selling_price' => 300, 'stock_qty' => 20, 'reorder_level' => 5,
+        ]);
+        $this->actingAs($cashier)->post(route('cashier.billing.store'), [
+            'items' => [['product_id' => $product->id, 'quantity' => 2]],
+            'payment_method' => 'cash',
+        ])->assertRedirect();
+
+        $sale = Sale::firstOrFail();
+        $saleItem = $sale->items()->firstOrFail();
+
+        $this->post(route('returns.store'), [
+            'sale_id' => $sale->id,
+            'items' => [
+                ['sale_item_id' => $saleItem->id, 'quantity' => 2],
+                ['sale_item_id' => $saleItem->id, 'quantity' => 2],
+            ],
+            'refund_method' => 'cash',
+        ])->assertSessionHasErrors(['items.0.sale_item_id', 'items.1.sale_item_id']);
+
+        $this->assertDatabaseCount('sale_returns', 0);
+        $this->assertDatabaseCount('sale_return_items', 0);
+        $this->assertEquals(18, $product->fresh()->stock_qty);
+        $this->assertDatabaseMissing('stock_movements', ['reason' => 'return']);
+    }
 }

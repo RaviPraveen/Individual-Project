@@ -31,7 +31,8 @@ class ForecastController extends Controller
         $prompt = "You are an inventory analyst for a Sri Lankan supermarket called Welcome Foodcity. ".
             "Based ONLY on the following computed data, write a short (2-3 sentence) plain-language ".
             "explanation of the sales trend and stock outlook for this product. Do not invent any numbers ".
-            "beyond what is given.\n\n".
+            'beyond what is given. No previous-period comparison is provided, so do not claim growth or decline. '.
+            "Being below the reorder level is a restocking signal, not proof of an upcoming stockout.\n\n".
             "Product: {$product->name}\n".
             "Quantity sold in the last {$forecast['lookback_weeks']} weeks: {$forecast['total_qty_sold']}\n".
             "Average weekly sales: {$forecast['avg_weekly_qty']}\n".

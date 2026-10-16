@@ -2,7 +2,7 @@
     <div class="text-center mb-4">
         <div class="d-inline-flex align-items-center justify-content-center mb-3 shadow-md" style="width:64px;height:64px;background:var(--pos-brand-gradient);border-radius:18px;font-size:2rem;color:#FFF;">🛒</div>
         <h1 class="h4 fw-extrabold text-dark mb-1">{{ config('app.name', 'Foodcity POS') }}</h1>
-        <p class="text-muted small mb-0">{{ __('Commercial SaaS Point of Sale Terminal') }}</p>
+        <p class="text-muted small mb-0">{{ __('Point of Sale') }}</p>
     </div>
 
     <x-auth-session-status class="mb-4" :status="session('status')" />

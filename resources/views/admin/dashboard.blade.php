@@ -35,7 +35,7 @@
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #EEF2FF 0%, #FFFFFF 100%); border: 1px solid #C7D2FE !important;">
                 <div class="card-header bg-transparent fw-bold text-primary border-bottom border-primary-subtle d-flex align-items-center justify-content-between">
-                    <span><i class="bi bi-stars me-1.5 text-gold"></i> {{ __('AI Business Narrative Summary') }}</span>
+                    <span><i class="bi bi-stars me-1.5 text-gold"></i> {{ __('Business Summary') }}</span>
                     <span class="badge bg-primary-subtle text-primary rounded-pill small">{{ __('Auto Updated') }}</span>
                 </div>
                 <div class="card-body">
@@ -43,7 +43,7 @@
                         <p class="mb-0 text-dark fw-medium leading-relaxed" style="font-size: 0.95rem;">{{ $summary }}</p>
                     @else
                         <div class="alert alert-light border mb-0 text-muted small">
-                            <i class="bi bi-info-circle me-1 text-primary"></i> {{ __('AI narrative is currently generating or awaiting configuration. Financial totals are displayed in real-time below.') }}
+                            <i class="bi bi-info-circle me-1 text-primary"></i> {{ __('The AI summary is unavailable right now. Current totals are shown below.') }}
                         </div>
                     @endif
                     <div class="text-muted small mt-3 pt-2 border-top border-primary-subtle d-flex align-items-center gap-2">
@@ -103,7 +103,7 @@
 
     <div class="row g-3 mb-4">
         <div class="col-6 col-lg-3">
-            <x-stat-card icon="bi-box-seam" tone="primary" :label="__('Active Products')" :value="$stats['products']" />
+            <x-stat-card icon="bi-box-seam" tone="primary" :label="__('Total Products')" :value="$stats['products']" />
         </div>
         <div class="col-6 col-lg-3">
             <x-stat-card icon="bi-truck" tone="info" :label="__('Suppliers')" :value="$stats['suppliers']" />

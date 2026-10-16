@@ -33,7 +33,7 @@
                 <span class="d-inline-flex align-items-center justify-content-center shadow-md" style="width:48px;height:48px;background:var(--pos-brand-gradient);border-radius:14px;font-size:1.4rem;color:#FFF;">🛒</span>
                 {{ config('app.name', 'Foodcity POS') }}
             </a>
-            <div class="text-muted small mt-1 fw-medium">{{ __('2026 Commercial SaaS POS') }}</div>
+            <div class="text-muted small mt-1 fw-medium">{{ __('Billing and Inventory System') }}</div>
         </div>
 
         <div class="card pos-guest-card pos-animate-in">

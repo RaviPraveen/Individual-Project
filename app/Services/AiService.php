@@ -6,12 +6,12 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-// Hugging Face text and image requests.
+// Cloudflare text and image requests.
 class AiService
 {
     public function isConfigured(): bool
     {
-        return filled(config('services.huggingface.key'));
+        return filled(config('services.cloudflare.account_id')) && filled(config('services.cloudflare.token'));
     }
 
     // Return null when the service is unavailable so the caller can use a fallback.
@@ -22,29 +22,33 @@ class AiService
         }
 
         try {
-            $model = config('services.huggingface.model');
-            $token = config('services.huggingface.key');
+            $account = config('services.cloudflare.account_id');
+            $model = config('services.cloudflare.text_model');
+            $token = config('services.cloudflare.token');
 
             $response = Http::withToken($token)
-                ->timeout(20)
-                ->post('https://router.huggingface.co/v1/chat/completions', [
+                ->timeout(30)
+                ->post("https://api.cloudflare.com/client/v4/accounts/{$account}/ai/v1/chat/completions", [
                     'model' => $model,
                     'messages' => [
+                        ['role' => 'system', 'content' => 'Follow the requested task and output format exactly. Use only supplied facts. Do not invent reasons, buying habits or trends. If the data is insufficient, say so.'],
                         ['role' => 'user', 'content' => $prompt],
                     ],
+                    'max_tokens' => 1024,
+                    'temperature' => 0.2,
                 ]);
 
             if (! $response->successful()) {
-                Log::warning('Hugging Face API request failed', ['status' => $response->status()]);
+                Log::warning('Cloudflare text request failed', ['status' => $response->status()]);
 
                 return null;
             }
 
             $text = $response->json('choices.0.message.content');
 
-            return is_string($text) ? trim($text) : null;
+            return is_string($text) && trim($text) !== '' ? trim($text) : null;
         } catch (Throwable $e) {
-            Log::warning('Hugging Face API request threw an exception', ['message' => $e->getMessage()]);
+            Log::warning('Cloudflare text request threw an exception', ['type' => get_class($e)]);
 
             return null;
         }
@@ -53,29 +57,41 @@ class AiService
     // Return image bytes, or null if generation fails.
     public function generateImage(string $prompt): ?string
     {
-        if (! $this->isConfigured()) {
+        $account = config('services.cloudflare.account_id');
+        $token = config('services.cloudflare.token');
+
+        if (blank($account) || blank($token)) {
             return null;
         }
 
         try {
-            $model = config('services.huggingface.image_model');
-            $token = config('services.huggingface.key');
+            $model = config('services.cloudflare.image_model');
 
             $response = Http::withToken($token)
                 ->timeout(60)
-                ->post("https://router.huggingface.co/hf-inference/models/{$model}", [
-                    'inputs' => $prompt,
+                ->post("https://api.cloudflare.com/client/v4/accounts/{$account}/ai/run/{$model}", [
+                    'prompt' => $prompt,
+                    'steps' => 4,
                 ]);
 
-            if (! $response->successful() || ! str_starts_with($response->header('Content-Type', ''), 'image/')) {
-                Log::warning('Hugging Face image request failed', ['status' => $response->status()]);
+            if (! $response->successful() || $response->json('success') !== true) {
+                Log::warning('Cloudflare image request failed', ['status' => $response->status()]);
 
                 return null;
             }
 
-            return $response->body();
+            $encoded = $response->json('result.image');
+            $image = is_string($encoded) ? base64_decode($encoded, true) : false;
+
+            if (! $image || @getimagesizefromstring($image) === false) {
+                Log::warning('Cloudflare returned an invalid image');
+
+                return null;
+            }
+
+            return $image;
         } catch (Throwable $e) {
-            Log::warning('Hugging Face image request threw an exception', ['message' => $e->getMessage()]);
+            Log::warning('Cloudflare image request threw an exception', ['type' => get_class($e)]);
 
             return null;
         }

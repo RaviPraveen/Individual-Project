@@ -58,7 +58,7 @@ class SupplierReturnController extends Controller
             'supplier_id' => ['required', 'exists:suppliers,id'],
             'return_date' => ['required', 'date'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.product_id' => ['required', 'distinct', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.reason' => ['required', 'in:expired,damaged,near_expiry,not_selling,wrong_item'],
         ]);
@@ -110,11 +110,12 @@ class SupplierReturnController extends Controller
 
                 $items = $locked->items()->get();
                 $lockedProducts = Product::whereIn('id', $items->pluck('product_id'))->lockForUpdate()->get()->keyBy('id');
+                $quantities = $items->groupBy('product_id')->map(fn ($lines) => $lines->sum('quantity'));
 
-                foreach ($items as $item) {
-                    $product = $lockedProducts->get($item->product_id);
+                foreach ($quantities as $productId => $quantity) {
+                    $product = $lockedProducts->get($productId);
 
-                    if (! $product || $product->stock_qty < $item->quantity) {
+                    if (! $product || $product->stock_qty < $quantity) {
                         throw new RuntimeException("Insufficient stock for {$product?->name}: only {$product?->stock_qty} available.");
                     }
                 }

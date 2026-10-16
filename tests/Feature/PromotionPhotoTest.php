@@ -79,6 +79,8 @@ class PromotionPhotoTest extends TestCase
             'use_generated_poster' => 1, 'product_photo' => $photo,
         ]))->assertSessionHasNoErrors()->assertRedirect(route('admin.promotions.index'));
         $promotion = Promotion::firstOrFail();
+        $this->assertSame('template', $promotion->poster_source);
+        $this->assertSame('Template Poster', $promotion->posterLabel());
         $this->assertSame($draft['photo_path'], $promotion->product_photo_path);
         Storage::disk('public')->assertExists($promotion->poster_path);
         Storage::disk('public')->assertMissing($draft['path']);

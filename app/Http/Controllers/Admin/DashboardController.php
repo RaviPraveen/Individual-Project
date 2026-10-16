@@ -100,7 +100,7 @@ class DashboardController extends Controller
     // Cache the summary for 30 minutes to limit API requests.
     private function businessSummary(Request $request, array $stats, $topCategory): ?string
     {
-        $cacheKey = 'admin_business_summary_'.now()->format('Y_m_d_H').'_'.intdiv(now()->minute, 30);
+        $cacheKey = 'admin_business_summary_cf_'.now()->format('Y_m_d_H').'_'.intdiv(now()->minute, 30);
 
         $cached = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($request, $stats, $topCategory) {
             $prompt = "You are a retail business analyst for a Sri Lankan supermarket called Welcome Foodcity. ".
@@ -108,7 +108,7 @@ class DashboardController extends Controller
                 "performance summary for the store owner. Do not invent any numbers beyond what is given.\n\n".
                 "Today's sales: {$stats['today_count']} transactions, revenue {$stats['today_total']}\n".
                 "This month's sales so far: {$stats['month_count']} transactions, revenue {$stats['month_total']}\n".
-                "Total active products: {$stats['products']}\n".
+                "Total products: {$stats['products']}\n".
                 "Products at/below reorder level: {$stats['low_stock']}\n".
                 'Top category this month: '.($topCategory->name ?? 'no sales yet')."\n".
                 "Total suppliers: {$stats['suppliers']}, total customers: {$stats['customers']}\n".

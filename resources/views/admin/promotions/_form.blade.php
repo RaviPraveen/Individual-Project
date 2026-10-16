@@ -67,7 +67,7 @@
                     <x-input-label for="product_photo" :value="__('Product Photo (Optional)')" />
                     <img id="product-photo-preview" src="{{ $photoPath ? \Illuminate\Support\Facades\Storage::disk('public')->url($photoPath) : '' }}" alt="{{ __('Selected product photo') }}" class="rounded-3 border mb-2 {{ $photoPath ? '' : 'd-none' }}" style="max-width:180px;max-height:150px;object-fit:contain;">
                     <input type="file" id="product_photo" name="product_photo" class="form-control" accept="image/png,image/jpeg,image/webp">
-                    <div class="form-text">{{ __('Use your exact product or rice brand. AI creates the background and keeps this photo. JPG, PNG or WebP, max 5MB and 4096 pixels per side.') }}</div>
+                    <div class="form-text">{{ __('Upload a product photo with the background removed. Use a transparent PNG. Max 5MB, 4096px per side.') }}</div>
                     <div class="form-check mt-2">
                         <input type="checkbox" class="form-check-input" id="remove_photo" name="remove_photo" value="1" @checked(old('remove_photo'))>
                         <label class="form-check-label small" for="remove_photo">{{ __('Remove product photo') }}</label>
@@ -80,7 +80,7 @@
                     @if ($promotion?->poster_path)
                         <div class="mb-2">
                             <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($promotion->poster_path) }}" alt="{{ __('Current poster') }}" class="rounded-3 border" style="max-height:120px;">
-                            <span class="badge bg-secondary-subtle text-secondary ms-2">{{ $promotion->poster_source === 'ai' ? __('AI Generated') : __('Custom Upload') }}</span>
+                            <span id="current-poster-label" class="badge bg-secondary-subtle text-secondary ms-2">{{ __($promotion->posterLabel()) }}</span>
                         </div>
                     @endif
                     <input type="file" id="poster_image" name="poster_image" class="form-control" accept="image/png,image/jpeg,image/webp">

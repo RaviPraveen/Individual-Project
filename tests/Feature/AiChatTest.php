@@ -31,6 +31,38 @@ class AiChatTest extends TestCase
         $this->actingAs($cashier)->get(route('cashier.ai-chat.index'))->assertOk();
     }
 
+    public function test_admin_prompt_includes_sales_periods_categories_and_product_sales(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        $this->mock(AiService::class)->shouldReceive('generate')->once()
+            ->withArgs(fn ($prompt) => str_contains($prompt, "TODAY'S SALES")
+                && str_contains($prompt, 'THIS CALENDAR MONTH')
+                && str_contains($prompt, 'REVENUE BY CATEGORY THIS MONTH')
+                && str_contains($prompt, 'PRODUCT SALES IN THE LAST 30 DAYS'))
+            ->andReturn('No sales recorded.');
+        $this->actingAs($admin)->postJson(route('admin.ai-chat.ask'), ['message' => "Show today's sales"])->assertOk();
+    }
+
+    public function test_follow_up_includes_only_the_current_users_conversation(): void
+    {
+        $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
+        $conversation = AiConversation::create(['user_id' => $cashier->id, 'title' => 'Rice']);
+        AiLog::create(['user_id' => $cashier->id, 'conversation_id' => $conversation->id,
+            'query' => 'Tell me about rice', 'response' => 'Rice is in stock.']);
+        $other = User::factory()->create();
+        $otherChat = AiConversation::create(['user_id' => $other->id, 'title' => 'Private']);
+        AiLog::create(['user_id' => $other->id, 'conversation_id' => $otherChat->id,
+            'query' => 'Other user private question', 'response' => 'Other user private answer']);
+        $this->mock(AiService::class)->shouldReceive('generate')->once()
+            ->withArgs(fn ($prompt) => str_contains($prompt, 'Tell me about rice')
+                && str_contains($prompt, 'Rice is in stock.')
+                && ! str_contains($prompt, 'Other user private'))
+            ->andReturn('The price is not recorded.');
+        $this->actingAs($cashier)->postJson(route('cashier.ai-chat.ask'), [
+            'message' => 'What is its price?', 'conversation_id' => $conversation->id,
+        ])->assertOk();
+    }
+
     public function test_ask_creates_conversation_lazily_and_logs_the_exchange(): void
     {
         $this->mockAi();

@@ -15,7 +15,7 @@
     @if (! empty($recommendations))
         <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #EEF2FF 0%, #FFFFFF 100%); border: 1px solid #C7D2FE !important;">
             <div class="card-header bg-transparent fw-bold text-primary border-bottom border-primary-subtle d-flex align-items-center justify-content-between">
-                <span><i class="bi bi-stars me-1.5 text-gold"></i> {{ __('AI Suggestions') }}</span>
+                <span><i class="bi bi-stars me-1.5 text-gold"></i> {{ __('Promotion Suggestions') }}</span>
                 <span class="badge bg-primary-subtle text-primary rounded-pill small">{{ __('Auto Updated') }}</span>
             </div>
             <div class="card-body">

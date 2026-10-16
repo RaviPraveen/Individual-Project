@@ -115,7 +115,6 @@ class PromotionAnalyticsTest extends TestCase
     public function test_recommendations_fall_back_to_computed_text_when_ai_is_unconfigured(): void
     {
         $admin = $this->admin();
-        // Check the computed recommendation without a Hugging Face key.
         Product::create([
             'name' => 'Overstocked Item', 'sku' => 'SKU-OVERSTOCK', 'cost_price' => 100,
             'selling_price' => 200, 'stock_qty' => 500, 'reorder_level' => 10,

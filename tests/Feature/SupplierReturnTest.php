@@ -92,6 +92,55 @@ class SupplierReturnTest extends TestCase
         $this->assertDatabaseCount('stock_movements', 0);
     }
 
+    public function test_store_rejects_the_same_product_on_two_return_lines(): void
+    {
+        ['admin' => $admin, 'supplier' => $supplier, 'product' => $product] = $this->pendingReturn(stockQty: 5, returnQty: 1);
+
+        $this->actingAs($admin)->post(route('admin.supplier-returns.store'), [
+            'supplier_id' => $supplier->id,
+            'return_date' => now()->format('Y-m-d'),
+            'items' => [
+                ['product_id' => $product->id, 'quantity' => 3, 'reason' => 'damaged'],
+                ['product_id' => $product->id, 'quantity' => 3, 'reason' => 'not_selling'],
+            ],
+        ])->assertSessionHasErrors(['items.0.product_id', 'items.1.product_id']);
+
+        $this->assertDatabaseCount('supplier_returns', 1);
+        $this->assertDatabaseCount('supplier_return_items', 1);
+        $this->assertEquals(5, $product->fresh()->stock_qty);
+    }
+
+    public function test_existing_duplicate_return_lines_cannot_exceed_combined_stock(): void
+    {
+        ['admin' => $admin, 'product' => $product, 'supplierReturn' => $supplierReturn] = $this->pendingReturn(stockQty: 5, returnQty: 3);
+        $supplierReturn->items()->create([
+            'product_id' => $product->id, 'quantity' => 3, 'reason' => 'damaged',
+        ]);
+
+        $this->actingAs($admin)->post(route('admin.supplier-returns.complete', $supplierReturn))
+            ->assertRedirect()->assertSessionHas('error');
+
+        $this->assertEquals('pending', $supplierReturn->fresh()->status);
+        $this->assertEquals(5, $product->fresh()->stock_qty);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
+
+    public function test_existing_duplicate_return_lines_can_complete_with_enough_stock(): void
+    {
+        ['admin' => $admin, 'product' => $product, 'supplierReturn' => $supplierReturn] = $this->pendingReturn(stockQty: 10, returnQty: 3);
+        $supplierReturn->items()->create([
+            'product_id' => $product->id, 'quantity' => 2, 'reason' => 'damaged',
+        ]);
+
+        $this->actingAs($admin)->post(route('admin.supplier-returns.complete', $supplierReturn))
+            ->assertRedirect()->assertSessionHas('success');
+
+        $this->assertEquals('completed', $supplierReturn->fresh()->status);
+        $this->assertEquals(5, $product->fresh()->stock_qty);
+        $this->assertEquals(5, $product->stockMovements()->sum('quantity'));
+        $this->assertDatabaseCount('stock_movements', 2);
+    }
+
     public function test_a_pending_supplier_return_leaves_stock_untouched(): void
     {
         ['product' => $product] = $this->pendingReturn(stockQty: 10, returnQty: 3);

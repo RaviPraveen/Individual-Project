@@ -57,12 +57,17 @@ class AiChatController extends Controller
         $conversation = $this->resolveConversation($user, $validated['conversation_id'] ?? null, $validated['message']);
 
         $context = $isAdmin ? $this->buildAdminContext() : $this->buildCashierContext();
+        $history = $conversation->logs()->orderByDesc('id')->limit(2)->get()->reverse()
+            ->map(fn ($log) => ['question' => $log->query, 'answer' => mb_substr($log->response, 0, 2000)])
+            ->values()->toJson(JSON_UNESCAPED_UNICODE);
 
         $prompt = "You are an internal staff assistant for Welcome Foodcity, a supermarket in Batticaloa, ".
             "Sri Lanka. Answer ONLY using the data provided below. Do not invent prices, stock levels, or ".
             "figures that are not present in this data. Keep answers concise. You may use markdown ".
             "(headings, bold, lists, tables) where it helps readability. If the question cannot be answered ".
-            "from this data, say so plainly.\n\nDATA:\n{$context}\n\nSTAFF QUESTION: {$validated['message']}";
+            "from this data, say so plainly. Use recent conversation only to understand follow-up questions; ".
+            "use the current DATA for all figures.\n\nDATA:\n{$context}\n\n".
+            "RECENT CONVERSATION:\n{$history}\n\nSTAFF QUESTION: {$validated['message']}";
 
         $answer = $this->aiService->generate($prompt);
         $widget = $this->buildWidget($validated['message'], $isAdmin);
@@ -381,11 +386,16 @@ class AiChatController extends Controller
     {
         $products = Product::where('is_active', true)
             ->orderBy('name')
-            ->get(['name', 'sku', 'barcode', 'selling_price', 'stock_qty'])
-            ->map(fn ($p) => "{$p->name} | SKU: {$p->sku} | Barcode: {$p->barcode} | Price: {$p->selling_price} | Stock: {$p->stock_qty}")
+            ->get(['name', 'sku', 'barcode', 'selling_price', 'stock_qty', 'reorder_level']);
+        $lowStock = $products->filter(fn ($p) => $p->stock_qty <= $p->reorder_level)
+            ->pluck('name')->implode(', ') ?: 'None';
+        $catalog = $products
+            ->map(fn ($p) => "{$p->name} | SKU: {$p->sku} | Barcode: {$p->barcode} | Price: {$p->selling_price} | Stock: {$p->stock_qty} | Reorder level: {$p->reorder_level}")
             ->implode("\n");
 
-        return "PRODUCT CATALOG (name | SKU | barcode | price | stock on hand):\n{$products}";
+        return "PRODUCT CATALOG (name | SKU | barcode | price | stock on hand | reorder level):\n{$catalog}\n\n".
+            "LOW STOCK PRODUCTS: {$lowStock}\n".
+            'For restocking questions, use only the LOW STOCK PRODUCTS list. Products above their reorder level are not low stock.';
     }
 
     private function buildAdminContext(): string
@@ -420,7 +430,20 @@ class AiChatController extends Controller
             ->map(fn ($po) => "{$po->supplier->name}: ordered {$po->order_date->format('Y-m-d')}, total {$po->total_amount}")
             ->implode("\n") ?: 'None';
 
+        $todaySales = json_encode($this->statsWidget('today')['items']);
+        $monthSales = json_encode($this->statsWidget('this month')['items']);
+        $categories = json_encode($this->chartWidget());
+        $sold = DB::table('sale_items')->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+            ->where('sales.created_at', '>=', now()->subDays(30))
+            ->selectRaw('product_id, SUM(quantity) as qty')->groupBy('product_id')->pluck('qty', 'product_id');
+        $productSales = Product::where('is_active', true)->get(['id', 'name'])
+            ->map(fn ($p) => "{$p->name}: ".($sold[$p->id] ?? 0).' units sold')->implode("\n");
+
         return "{$catalog}\n\n".
+            "TODAY'S SALES (".now()->format('Y-m-d')."):\n{$todaySales}\n\n".
+            "THIS CALENDAR MONTH (".now()->format('Y-m')."):\n{$monthSales}\n\n".
+            "REVENUE BY CATEGORY THIS MONTH:\n{$categories}\n\n".
+            "PRODUCT SALES IN THE LAST 30 DAYS:\n{$productSales}\n\n".
             "SALES SUMMARY (last 30 days): {$last30Days->transactions} transactions, revenue {$last30Days->revenue}\n\n".
             "LOW STOCK PRODUCTS:\n{$lowStock}\n\n".
             "REORDER RECOMMENDATIONS:\n{$reorderRecommendations}\n\n".

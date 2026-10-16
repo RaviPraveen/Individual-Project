@@ -97,7 +97,9 @@ class CustomerController extends Controller
 
             $prompt = "You are a retail analyst for a Sri Lankan supermarket called Welcome Foodcity. ".
                 "Based ONLY on the following computed customer data, write a short (2-3 sentence) plain-language ".
-                "summary of this customer's buying pattern. Do not invent any numbers beyond what is given.\n\n".
+                "summary of this customer's buying pattern. Do not invent any numbers beyond what is given. ".
+                'With only one order, say there is not enough history to establish usual buying habits. '.
+                "Do not assume a bulk purchase or that the customer bought all their groceries here.\n\n".
                 "Customer: {$customer->name}\n".
                 "Total orders: {$totalOrders}\n".
                 "Total spend: {$totalSpend}\n".

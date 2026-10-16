@@ -279,16 +279,18 @@ class ReportController extends Controller
             $supplierName = $row['supplier']['name'] ?? 'unknown supplier';
             $expiry = $row['is_near_expiry'] ? ', nearing expiry' : '';
 
-            return "{$row['product']->name}: sold {$row['qty_sold']} in {$days} days, stock value Rs {$row['stock_value']}, usual supplier {$supplierName}{$expiry}";
+            return "{$row['product']->name}: sold {$row['qty_sold']} units in {$days} days, stock value Rs {$row['stock_value']}, usual supplier {$supplierName}{$expiry}";
         })->implode("\n");
-        $cacheKey = 'dead_stock_narrative_'.md5($list);
+        $cacheKey = 'dead_stock_narrative_cf_'.md5($list);
 
         $cached = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($request, $list) {
 
             $prompt = 'You are a retail inventory analyst for a Sri Lankan supermarket called Welcome Foodcity. '.
                 'Based ONLY on the following computed slow-moving/dead-stock data, write a short (3-4 sentence) '.
                 'recommendation on which products are the strongest candidates to return to their supplier and why. '.
-                "Do not invent any numbers beyond what is given.\n\n{$list}";
+                'Do not invent numbers, losses, savings or supplier return terms. '.
+                'Mention nearing expiry only for products explicitly marked that way. '.
+                "Treat returns as something to review with the supplier, not a guaranteed option.\n\n{$list}";
 
             $narrative = $this->aiService->generate($prompt);
 
@@ -344,23 +346,30 @@ class ReportController extends Controller
             return null;
         }
 
-        $cacheKey = 'profit_narrative_'.$start->format('Ymd').'_'.$end->format('Ymd').'_'.$rows->count().'_'.intdiv(now()->minute, 30).'_'.now()->format('YmdH');
+        $cacheKey = 'profit_narrative_cf_'.$start->format('Ymd').'_'.$end->format('Ymd').'_'.$rows->count().'_'.intdiv(now()->minute, 30).'_'.now()->format('YmdH');
 
         $cached = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($request, $rows, $start, $end) {
-            $top = $rows->sortByDesc('margin_percent')->take(3);
-            $bottom = $rows->sortBy('margin_percent')->take(3);
+            $ranked = $rows->sortByDesc('margin_percent')->values();
+            $top = $ranked->take(3);
+            $bottom = $ranked->slice($top->count())->sortBy('margin_percent')->take(3);
+            $highestMargin = $ranked->first();
+            $highestProfit = $rows->sortByDesc('profit')->first();
 
             $topList = $top->map(fn ($r) => "{$r->name} ({$r->margin_percent}% margin, profit {$r->profit})")->implode(', ');
             $bottomList = $bottom->map(fn ($r) => "{$r->name} ({$r->margin_percent}% margin, profit {$r->profit})")->implode(', ');
 
             $prompt = "You are a retail profitability analyst for a Sri Lankan supermarket called Welcome Foodcity. ".
                 "Based ONLY on the following computed data for the period {$start->format('Y-m-d')} to {$end->format('Y-m-d')}, ".
-                "write a short (2-3 sentence) plain-language explanation of which products are most and least profitable ".
-                "and why that matters for the business. Do not invent any numbers beyond what is given.\n\n".
+                "write a short (2-3 sentence) plain-language comparison of the listed product margins and profit amounts. ".
+                "Distinguish percentage margin from total profit. Do not invent any numbers beyond what is given.\n\n".
+                'Describe the supplied margins and profits only. Do not infer demand, popularity or sales trends. '.
+                "If no lower-margin comparison products are listed, do not invent any.\n\n".
+                "Computed comparison: {$highestMargin->name} has the highest percentage margin ({$highestMargin->margin_percent}%). ".
+                "{$highestProfit->name} has the highest total profit (Rs {$highestProfit->profit}). Use these rankings exactly.\n".
                 'Total revenue: '.$rows->sum('revenue')."\n".
                 'Total profit: '.$rows->sum('profit')."\n".
-                "Most profitable products: {$topList}\n".
-                "Least profitable products: {$bottomList}";
+                "Highest-margin products: {$topList}\n".
+                'Other lower-margin products: '.($bottomList ?: 'None in this report');
 
             $narrative = $this->aiService->generate($prompt);
 

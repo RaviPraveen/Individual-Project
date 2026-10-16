@@ -128,6 +128,10 @@ class PromotionPosterTest extends TestCase
         $this->assertNotNull($promotion->pending_poster_path);
         $this->assertFalse($promotion->pending_poster_used_ai);
         Storage::disk('public')->assertExists($promotion->pending_poster_path);
+        $this->postJson(route('admin.promotions.poster.approve', $promotion))->assertOk()
+            ->assertJsonPath('poster_label', 'Template Poster');
+        $this->assertSame('template', $promotion->fresh()->poster_source);
+        $this->assertSame('Template Poster', $promotion->fresh()->posterLabel());
     }
 
     public function test_approve_promotes_the_pending_poster_to_live_and_clears_pending(): void

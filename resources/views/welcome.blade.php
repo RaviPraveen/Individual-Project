@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ config('app.name', 'Foodcity POS') }} — 2026 Commercial SaaS POS</title>
+        <title>{{ config('app.name', 'Foodcity POS') }} — Billing and Inventory System</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -21,7 +21,7 @@
         <div class="text-center pos-animate-in max-w-xl mx-auto">
             <div class="d-inline-flex align-items-center justify-content-center mb-4 shadow-lg" style="width:80px;height:80px;background:var(--pos-brand-gradient);border-radius:24px;font-size:2.5rem;color:#FFF;">🛒</div>
             <h1 class="mb-2 fw-extrabold text-dark display-5">{{ config('app.name', 'Foodcity POS') }}</h1>
-            <p class="text-muted fs-5 mb-4 max-w-md mx-auto">{{ __('Commercial SaaS Point of Sale & Retail Management System with Artificial Intelligence') }}</p>
+            <p class="text-muted fs-5 mb-4 max-w-md mx-auto">{{ __('Billing and Inventory System') }}</p>
 
             <div class="d-flex justify-content-center gap-3">
                 @auth
@@ -37,7 +37,7 @@
 
             <div class="mt-5 text-muted small fw-medium">
                 <span class="badge bg-light text-dark border px-3 py-2 rounded-pill me-2">⚡ Ultra-Fast Billing</span>
-                <span class="badge bg-light text-dark border px-3 py-2 rounded-pill me-2">✨ AI Copilot</span>
+                <span class="badge bg-light text-dark border px-3 py-2 rounded-pill me-2">✨ AI Assistant</span>
                 <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">⭐ Star Points Loyalty</span>
             </div>
         </div>

@@ -26,7 +26,7 @@
                     <span class="brand-mark">🛒</span>
                     <div class="d-flex flex-column">
                         <span class="lh-1">{{ config('app.name', 'Foodcity') }}</span>
-                        <span class="fw-semibold text-uppercase mt-1" style="font-size: 0.65rem; letter-spacing: 0.1em; color: #5B5CEB;">Commercial SaaS POS</span>
+                        <span class="fw-semibold text-uppercase mt-1" style="font-size: 0.65rem; letter-spacing: 0.1em; color: #5B5CEB;">Point of Sale</span>
                     </div>
                 </a>
 
