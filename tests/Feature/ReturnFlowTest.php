@@ -195,4 +195,96 @@ class ReturnFlowTest extends TestCase
         $this->assertEquals(18, $product->fresh()->stock_qty);
         $this->assertDatabaseMissing('stock_movements', ['reason' => 'return']);
     }
+
+    public function test_invoice_search_finds_partial_and_unformatted_numbers_for_both_staff_roles(): void
+    {
+        $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
+        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        $sale = $this->invoiceFixture($cashier, 'INV-20261120-0042');
+        $this->invoiceFixture($cashier, 'INV-20261119-0001');
+
+        foreach ([$cashier, $admin] as $user) {
+            foreach (['20261120', 'inv20261120', '0042'] as $query) {
+                $this->actingAs($user)->getJson(route('returns.search', ['q' => $query]))
+                    ->assertOk()
+                    ->assertJsonCount(1, 'sales')
+                    ->assertJsonPath('sales.0.invoice_no', $sale->invoice_no)
+                    ->assertJsonPath('sales.0.customer_name', 'Walk-in')
+                    ->assertJsonPath('sales.0.total', 400);
+            }
+        }
+    }
+
+    public function test_invoice_lookup_accepts_copied_numbers_with_spaces_or_different_dashes(): void
+    {
+        $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
+        $sale = $this->invoiceFixture($cashier, 'INV-20261120-0042');
+
+        foreach ([' inv - 20261120 - 0042 ', 'inv202611200042', "INV\u{2011}20261120\u{2011}0042"] as $invoice) {
+            $this->actingAs($cashier)->getJson(route('returns.lookup', ['invoice_no' => $invoice]))
+                ->assertOk()
+                ->assertJsonPath('sale_id', $sale->id)
+                ->assertJsonPath('items.0.max_returnable', 4);
+        }
+    }
+
+    public function test_invoice_search_does_not_treat_wildcards_as_every_invoice(): void
+    {
+        $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
+        $this->invoiceFixture($cashier, 'INV-20261120-0042');
+
+        foreach (['INV%', 'INV_'] as $query) {
+            $this->actingAs($cashier)->getJson(route('returns.search', ['q' => $query]))
+                ->assertOk()->assertJsonCount(0, 'sales');
+        }
+    }
+
+    public function test_invoice_lookup_refreshes_return_quantities_after_each_refund(): void
+    {
+        $cashier = User::factory()->create(['role' => 'cashier', 'is_active' => true]);
+        $sale = $this->invoiceFixture($cashier, 'INV-20261120-0042');
+        $item = $sale->items()->firstOrFail();
+
+        foreach ([2, 0] as $remaining) {
+            $this->actingAs($cashier)->post(route('returns.store'), [
+                'sale_id' => $sale->id,
+                'items' => [['sale_item_id' => $item->id, 'quantity' => 2]],
+                'refund_method' => 'cash',
+            ])->assertSessionHas('success');
+
+            $this->getJson(route('returns.lookup', ['invoice_no' => $sale->invoice_no]))
+                ->assertOk()
+                ->assertJsonPath('items.0.max_returnable', $remaining)
+                ->assertJsonPath('items.0.already_returned', 4 - $remaining);
+        }
+
+        $this->assertSame(12, $item->product->fresh()->stock_qty);
+    }
+
+    public function test_invoice_search_requires_an_active_staff_account(): void
+    {
+        $this->getJson(route('returns.search', ['q' => 'INV']))->assertUnauthorized();
+
+        $inactive = User::factory()->create(['role' => 'cashier', 'is_active' => false]);
+        $this->actingAs($inactive)->getJson(route('returns.search', ['q' => 'INV']))->assertForbidden();
+    }
+
+    private function invoiceFixture(User $cashier, string $invoice): Sale
+    {
+        $product = Product::create([
+            'name' => 'Invoice lookup product', 'sku' => uniqid('RETURN-'),
+            'cost_price' => 75, 'selling_price' => 100, 'stock_qty' => 8, 'reorder_level' => 2,
+        ]);
+        $sale = Sale::create([
+            'invoice_no' => $invoice, 'cashier_id' => $cashier->id,
+            'subtotal' => 400, 'discount' => 0, 'tax' => 0, 'total' => 400,
+            'payment_method' => 'cash', 'points_earned' => 0, 'points_redeemed' => 0,
+        ]);
+        $sale->items()->create([
+            'product_id' => $product->id, 'quantity' => 4,
+            'unit_price' => 100, 'cost_price' => 75, 'line_total' => 400,
+        ]);
+
+        return $sale;
+    }
 }

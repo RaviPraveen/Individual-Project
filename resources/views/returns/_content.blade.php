@@ -12,7 +12,18 @@
     </div>
 @endif
 
-<div class="row g-4">
+<div class="row g-4" id="customer-returns"
+     data-lookup-url="{{ route('returns.lookup') }}"
+     data-search-url="{{ route('returns.search') }}"
+     data-message-enter-invoice="{{ __('Enter an invoice number or choose a matching sale.') }}"
+     data-message-no-matches="{{ __('No matching invoices found.') }}"
+     data-message-not-found="{{ __('No sale found with that invoice number. Choose a matching invoice from the list.') }}"
+     data-message-lookup-error="{{ __('Unable to load the invoice. Please try again.') }}"
+     data-message-session-expired="{{ __('Your session has expired. Reload the page and sign in again.') }}"
+     data-message-loading="{{ __('Loading...') }}"
+     data-message-fully-returned="{{ __('All items on this invoice have already been returned.') }}"
+     data-message-select-items="{{ __('Enter a quantity for at least one item to return.') }}"
+     data-message-processing="{{ __('Processing...') }}">
     <div class="col-lg-7">
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white py-3 border-bottom fw-bold text-dark">
@@ -20,14 +31,18 @@
             </div>
             <div class="card-body p-4">
                 <x-input-label for="invoice-lookup" :value="__('Enter Invoice Number')" />
-                <div class="input-group input-group-lg">
-                    <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-receipt"></i></span>
-                    <input type="text" id="invoice-lookup" class="form-control border-start-0 ps-0 fw-semibold" placeholder="{{ __('e.g. INV-20260719-0008') }}" autocomplete="off">
-                    <button type="button" class="btn btn-primary px-4 fw-bold" id="invoice-lookup-btn">
-                        <i class="bi bi-search me-1"></i> {{ __('Find Sale') }}
-                    </button>
+                <div class="position-relative" id="invoice-lookup-area">
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-white text-muted border-end-0"><i class="bi bi-receipt"></i></span>
+                        <input type="text" id="invoice-lookup" class="form-control border-start-0 ps-0 fw-semibold" placeholder="{{ __('e.g. INV-20260719-0008') }}" autocomplete="off" maxlength="100" role="combobox" aria-autocomplete="list" aria-controls="invoice-results" aria-expanded="false" aria-describedby="invoice-lookup-help lookup-error">
+                        <button type="button" class="btn btn-primary px-4 fw-bold" id="invoice-lookup-btn">
+                            <i class="bi bi-search me-1"></i> {{ __('Find Sale') }}
+                        </button>
+                    </div>
+                    <div id="invoice-results" class="list-group position-absolute w-100 shadow-sm d-none" role="listbox" aria-label="{{ __('Matching sale invoices') }}" style="z-index: 1050; max-height: 18rem; overflow-y: auto;"></div>
                 </div>
-                <div class="small text-danger mt-2 d-none fw-semibold" id="lookup-error"></div>
+                <div class="form-text" id="invoice-lookup-help">{{ __('Enter all or part of the invoice number, then select the matching sale.') }}</div>
+                <div class="small text-danger mt-2 d-none fw-semibold" id="lookup-error" role="alert"></div>
             </div>
         </div>
 
@@ -75,8 +90,9 @@
                         </div>
                     </div>
 
+                    <div class="small text-danger mb-3 d-none fw-semibold" id="return-form-error" role="alert"></div>
                     <div class="d-flex gap-2 pt-2 border-top">
-                        <button type="submit" class="btn btn-danger fw-bold px-4 rounded-3"><i class="bi bi-check-circle me-1"></i> {{ __('Process Refund') }}</button>
+                        <button type="submit" class="btn btn-danger fw-bold px-4 rounded-3" id="process-return-btn" disabled><i class="bi bi-check-circle me-1"></i> {{ __('Process Refund') }}</button>
                         <button type="button" class="btn btn-outline-secondary rounded-3" id="cancel-return-btn">{{ __('Cancel') }}</button>
                     </div>
                 </form>
@@ -128,130 +144,4 @@
     </div>
 </div>
 
-<script>
-    const lookupUrl = '{{ route('returns.lookup') }}';
-
-    const lookupInput = document.getElementById('invoice-lookup');
-    const lookupBtn = document.getElementById('invoice-lookup-btn');
-    const lookupError = document.getElementById('lookup-error');
-    const formCard = document.getElementById('return-form-card');
-    const saleIdInput = document.getElementById('sale_id_input');
-    const saleInvoiceNo = document.getElementById('sale-invoice-no');
-    const saleMeta = document.getElementById('sale-meta');
-    const itemsBody = document.getElementById('return-items-body');
-    const itemsInputs = document.getElementById('items-inputs');
-    const refundMethodSelect = document.getElementById('refund_method');
-    const estimatedRefund = document.getElementById('estimated-refund');
-
-    let currentSale = null;
-
-    function performLookup() {
-        const invoiceNo = lookupInput.value.trim();
-        lookupError.classList.add('d-none');
-        if (!invoiceNo) return;
-
-        fetch(`${lookupUrl}?invoice_no=${encodeURIComponent(invoiceNo)}`, { headers: { 'Accept': 'application/json' } })
-            .then(r => r.json().then(data => ({ ok: r.ok, data })))
-            .then(({ ok, data }) => {
-                if (!ok) {
-                    lookupError.textContent = data.message || '{{ __('Sale not found.') }}';
-                    lookupError.classList.remove('d-none');
-                    formCard.classList.add('d-none');
-                    currentSale = null;
-                    return;
-                }
-                currentSale = data;
-                renderReturnForm();
-            })
-            .catch(() => {
-                lookupError.textContent = '{{ __('Error looking up sale. Please try again.') }}';
-                lookupError.classList.remove('d-none');
-            });
-    }
-
-    lookupBtn.addEventListener('click', performLookup);
-    lookupInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            performLookup();
-        }
-    });
-
-    function renderReturnForm() {
-        if (!currentSale) return;
-
-        saleIdInput.value = currentSale.sale_id;
-        saleInvoiceNo.textContent = currentSale.invoice_no;
-        saleMeta.textContent = `Date: ${currentSale.date} | Customer: ${currentSale.customer_name || 'Walk-in'} | Total: Rs ${parseFloat(currentSale.total).toFixed(2)}`;
-
-        itemsBody.innerHTML = '';
-        currentSale.items.forEach(item => {
-            const availableToReturn = item.max_returnable;
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>
-                    <div class="fw-bold text-dark">${item.product_name}</div>
-                    <div class="small text-muted">Price: Rs ${parseFloat(item.unit_price).toFixed(2)}</div>
-                </td>
-                <td class="text-end fw-semibold">${item.quantity}</td>
-                <td class="text-end text-muted">${item.already_returned}</td>
-                <td class="text-center">
-                    <input type="number" class="form-control form-control-sm text-center fw-bold return-qty-input"
-                           data-item-id="${item.sale_item_id}"
-                           data-unit-price="${item.unit_price}"
-                           min="0" max="${availableToReturn}" value="0"
-                           ${availableToReturn <= 0 ? 'disabled' : ''}>
-                </td>
-            `;
-            itemsBody.appendChild(row);
-        });
-
-        formCard.classList.remove('d-none');
-        rebuildReturnInputs();
-    }
-
-    itemsBody.addEventListener('input', (e) => {
-        if (e.target.classList.contains('return-qty-input')) {
-            const max = parseInt(e.target.max) || 0;
-            let val = parseInt(e.target.value) || 0;
-            if (val > max) { val = max; e.target.value = val; }
-            if (val < 0) { val = 0; e.target.value = val; }
-            rebuildReturnInputs();
-        }
-    });
-
-    function rebuildReturnInputs() {
-        itemsInputs.innerHTML = '';
-        let totalEstimated = 0;
-        const roundMoney = value => Math.round((value + Number.EPSILON) * 100) / 100;
-        const discountRatio = currentSale.subtotal > 0 ? currentSale.discount / currentSale.subtotal : 0;
-
-        const inputs = itemsBody.querySelectorAll('.return-qty-input');
-        inputs.forEach((input, index) => {
-            const qty = parseInt(input.value) || 0;
-            const itemId = input.dataset.itemId;
-            const unitPrice = parseFloat(input.dataset.unitPrice) || 0;
-
-            if (qty > 0) {
-                itemsInputs.innerHTML += `
-                    <input type="hidden" name="items[${index}][sale_item_id]" value="${itemId}">
-                    <input type="hidden" name="items[${index}][quantity]" value="${qty}">
-                `;
-                const subtotal = roundMoney(qty * unitPrice);
-                const discount = roundMoney(subtotal * discountRatio);
-                const tax = roundMoney((subtotal - discount) * currentSale.refund_tax_percent / 100);
-                const points = currentSale.subtotal > 0
-                    ? roundMoney(currentSale.redemption_value * subtotal / currentSale.subtotal) : 0;
-                totalEstimated += subtotal - discount + tax - points;
-            }
-        });
-
-        estimatedRefund.textContent = Math.max(0, totalEstimated).toFixed(2);
-    }
-
-    document.getElementById('cancel-return-btn').addEventListener('click', () => {
-        formCard.classList.add('d-none');
-        lookupInput.value = '';
-        currentSale = null;
-    });
-</script>
+<script src="{{ asset('js/returns.js') }}?v={{ filemtime(public_path('js/returns.js')) }}" defer></script>

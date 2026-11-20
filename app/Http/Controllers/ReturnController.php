@@ -40,11 +40,16 @@ class ReturnController extends Controller
     public function lookup(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'invoice_no' => ['required', 'string'],
+            'invoice_no' => ['required', 'string', 'max:100'],
         ]);
 
+        $invoiceNo = $this->normalizeInvoiceNumber($validated['invoice_no']);
+
         $sale = Sale::with('items.product', 'customer')
-            ->where('invoice_no', trim($validated['invoice_no']))
+            ->where(function ($query) use ($invoiceNo, $validated) {
+                $query->where('invoice_no', $invoiceNo)
+                    ->orWhere('invoice_no', trim($validated['invoice_no']));
+            })
             ->first();
 
         if (! $sale) {
@@ -84,6 +89,39 @@ class ReturnController extends Controller
             'total' => (float) $sale->total,
             'items' => $items,
         ]);
+    }
+
+    public function search(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'q' => ['required', 'string', 'max:100'],
+        ]);
+
+        $term = $this->normalizeInvoiceNumber($validated['q']);
+
+        if (mb_strlen($term) < 2) {
+            return response()->json(['sales' => []]);
+        }
+
+        // Treat wildcard characters as invoice text rather than search operators.
+        $term = str_replace('-', '', $term);
+        $term = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $term);
+
+        $sales = Sale::query()
+            ->with('customer:id,name')
+            ->whereRaw("REPLACE(invoice_no, '-', '') LIKE ? ESCAPE '!'", ['%'.$term.'%'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->limit(8)
+            ->get(['id', 'invoice_no', 'created_at', 'customer_id', 'total'])
+            ->map(fn (Sale $sale) => [
+                'invoice_no' => $sale->invoice_no,
+                'date' => $sale->created_at->format('Y-m-d H:i'),
+                'customer_name' => $sale->customer?->name ?? 'Walk-in',
+                'total' => (float) $sale->total,
+            ]);
+
+        return response()->json(['sales' => $sales]);
     }
 
     public function store(Request $request, ActivityLogger $activityLogger): RedirectResponse
@@ -240,6 +278,20 @@ class ReturnController extends Controller
             'saleReturn' => $saleReturn,
             'settings' => ReceiptSetting::current(),
         ]);
+    }
+
+    private function normalizeInvoiceNumber(string $invoiceNo): string
+    {
+        $invoiceNo = mb_strtoupper(trim($invoiceNo));
+        $invoiceNo = preg_replace('/[\x{2010}-\x{2015}\x{2212}]/u', '-', $invoiceNo);
+        $invoiceNo = preg_replace('/\s+/u', '', $invoiceNo);
+
+        // Accept the printed invoice number even when pasted without its dashes.
+        if (preg_match('/^INV(\d{8})(\d{4,})$/', str_replace('-', '', $invoiceNo), $matches)) {
+            return 'INV-'.$matches[1].'-'.$matches[2];
+        }
+
+        return $invoiceNo;
     }
 
     private function generateReturnNumber(): string

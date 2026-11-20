@@ -143,6 +143,7 @@ Route::middleware(['auth', 'verified', 'role:admin,cashier'])->group(function ()
     Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
 
     Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');
+    Route::get('/returns/search', [ReturnController::class, 'search'])->name('returns.search');
     Route::get('/returns/lookup', [ReturnController::class, 'lookup'])->name('returns.lookup');
     Route::post('/returns', [ReturnController::class, 'store'])->name('returns.store');
     Route::get('/returns/{saleReturn}', [ReturnController::class, 'show'])->name('returns.show');
