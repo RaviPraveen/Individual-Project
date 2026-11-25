@@ -28,6 +28,10 @@
             <x-input-error :messages="$errors->get('password')" />
         </div>
 
+        <div class="text-end mb-3">
+            <a href="{{ route('password.request') }}" class="small fw-semibold">{{ __('Forgot Password?') }}</a>
+        </div>
+
         <div class="mb-4 form-check form-switch p-2 bg-light rounded-3 border ps-5">
             <input id="remember_me" type="checkbox" class="form-check-input" name="remember" style="margin-left:-2.5em;">
             <label for="remember_me" class="form-check-label fw-semibold text-dark small">{{ __('Remember this station') }}</label>
